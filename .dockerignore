@@ -1,0 +1,10 @@
+node_modules
+.git
+.github
+.DS_Store
+output
+coverage
+apps/web/.next
+apps/api/dist
+apps/web/node_modules
+apps/api/node_modules

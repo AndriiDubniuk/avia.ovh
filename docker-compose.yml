@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: avia-agro-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: avia_agro
+      POSTGRES_USER: avia
+      POSTGRES_PASSWORD: avia
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

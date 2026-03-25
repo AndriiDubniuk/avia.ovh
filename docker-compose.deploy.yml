@@ -1,0 +1,112 @@
+name: avia-ovh
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is required}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  api:
+    image: ${API_IMAGE_REF:?API_IMAGE_REF is required}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - apps/api/.env.production
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - app-network
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.middlewares.avia-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.avia-https-redirect.redirectscheme.permanent=true"
+      - "traefik.http.middlewares.avia-api-strip.stripprefix.prefixes=/api"
+      - "traefik.http.routers.avia-api-http.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.avia-api-http.entrypoints=web"
+      - "traefik.http.routers.avia-api-http.middlewares=avia-https-redirect"
+      - "traefik.http.routers.avia-api-http.priority=100"
+      - "traefik.http.routers.avia-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.avia-api.entrypoints=websecure"
+      - "traefik.http.routers.avia-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.avia-api.middlewares=avia-api-strip"
+      - "traefik.http.routers.avia-api.priority=100"
+      - "traefik.http.services.avia-api.loadbalancer.server.port=3001"
+
+  web:
+    image: ${WEB_IMAGE_REF:?WEB_IMAGE_REF is required}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    env_file:
+      - apps/web/.env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.middlewares.avia-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.avia-https-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.avia-web-http.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) || Host(`www.${APP_DOMAIN:?APP_DOMAIN is required}`)"
+      - "traefik.http.routers.avia-web-http.entrypoints=web"
+      - "traefik.http.routers.avia-web-http.middlewares=avia-https-redirect"
+      - "traefik.http.routers.avia-web-http.priority=10"
+      - "traefik.http.routers.avia-web.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) || Host(`www.${APP_DOMAIN:?APP_DOMAIN is required}`)"
+      - "traefik.http.routers.avia-web.entrypoints=websecure"
+      - "traefik.http.routers.avia-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.avia-web.priority=10"
+      - "traefik.http.services.avia-web.loadbalancer.server.port=3000"
+
+volumes:
+  postgres_data:
+    name: avia_ovh_postgres_data
+
+networks:
+  app-network:
+    driver: bridge
+  traefik-public:
+    external: true

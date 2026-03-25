@@ -139,7 +139,7 @@ jobs:
           docker compose --env-file .env.production -f docker-compose.deploy.yml up -d postgres
           docker compose --env-file .env.production -f docker-compose.deploy.yml up -d web api
 
-          if ! curl -fsS https://avia.ovh/health >/dev/null || ! curl -fsS https://avia.ovh/api/health >/dev/null; then
+          if ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/health >/dev/null || ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/api/health >/dev/null; then
             if [ -f ".env.production.bak.\${BACKUP_SUFFIX}" ]; then
               cp ".env.production.bak.\${BACKUP_SUFFIX}" .env.production
               docker compose --env-file .env.production -f docker-compose.deploy.yml up -d web api

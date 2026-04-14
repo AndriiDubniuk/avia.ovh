@@ -22,6 +22,8 @@ describe('AppController', () => {
         endpoints: {
           health: '/health',
           contactRequests: '/contact-requests',
+          billingPlans: '/billing/plans',
+          billingCheckouts: '/billing/checkouts',
         },
       });
     });

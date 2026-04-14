@@ -319,6 +319,17 @@ export default function Home() {
                       {fact}
                     </div>
                   ))}
+
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="mt-2 rounded-full border-white/20 bg-white/8 text-white hover:bg-white/12 hover:text-white"
+                  >
+                    <Link href={siteConfig.billingUrl} target="_blank" rel="noreferrer">
+                      Відкрити billing для підписок
+                      <ArrowUpRight className="size-4" />
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -492,7 +503,10 @@ export default function Home() {
                 <CardContent className="space-y-4 text-sm leading-6 text-white/82">
                   <p>1. Уточнюємо, що саме треба запустити і в які строки.</p>
                   <p>2. Даємо пакет або scope першого етапу з бюджетним орієнтиром.</p>
-                  <p>3. Після погодження клієнт переходить до онлайн-оплати цього етапу.</p>
+                  <p>
+                    3. Після погодження клієнт переходить до онлайн-оплати етапу або в
+                    окремий billing-контур для річної підписки.
+                  </p>
                 </CardContent>
               </Card>
 

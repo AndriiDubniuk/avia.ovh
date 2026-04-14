@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f1e8;
+  --foreground: #111111;
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-strong: #fffaf2;
+  --muted: #6b675f;
+  --border: rgba(17, 17, 17, 0.12);
+  --accent: #ff8b37;
+  --accent-dark: #d46619;
+  --surface: #131313;
+  --surface-soft: #232323;
+  --success: #1d7f48;
+  --danger: #b24531;
+}
+
+@theme inline {
+  --font-sans: var(--font-grotesk);
+  --font-display: var(--font-fraunces);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--foreground);
+  font-family: var(--font-grotesk), sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(255, 139, 55, 0.18), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(19, 19, 19, 0.08), transparent 18%),
+    linear-gradient(180deg, #fcf8f1 0%, #f3ece1 52%, #efe5d8 100%);
+}
+
+a,
+button,
+input {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(255, 139, 55, 0.28);
+}
+
+.billing-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.billing-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%23111111' fill-opacity='0.04'%3E%3Ccircle cx='20' cy='20' r='1.4'/%3E%3Ccircle cx='118' cy='32' r='1.1'/%3E%3Ccircle cx='76' cy='78' r='1.2'/%3E%3Ccircle cx='34' cy='130' r='1.1'/%3E%3Ccircle cx='148' cy='120' r='1.2'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.display {
+  font-family: var(--font-fraunces), serif;
+  letter-spacing: -0.04em;
+}

@@ -60,5 +60,18 @@ export function validateEnv(config: RawEnv) {
     DB_NAME: parseString(config.DB_NAME, 'avia_agro'),
     DB_SSL: parseBoolean(config.DB_SSL, false),
     TYPEORM_SYNCHRONIZE: parseBoolean(config.TYPEORM_SYNCHRONIZE, true),
+    BILLING_PUBLIC_URL: parseString(
+      config.BILLING_PUBLIC_URL,
+      'http://localhost:3002',
+    ),
+    BILLING_PUBLIC_API_URL: parseString(
+      config.BILLING_PUBLIC_API_URL,
+      'http://localhost:3001',
+    ),
+    MONOBANK_API_BASE_URL: parseString(
+      config.MONOBANK_API_BASE_URL,
+      'https://api.monobank.ua',
+    ),
+    MONOBANK_ACQUIRING_TOKEN: parseString(config.MONOBANK_ACQUIRING_TOKEN, ''),
   };
 }

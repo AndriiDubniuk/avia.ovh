@@ -3,9 +3,9 @@
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "scripts": {
-    "dev": "docker compose up -d && concurrently -n api,web -c magenta,cyan \"pnpm --dir apps/api start:dev\" \"pnpm --dir apps/web dev\"",
-    "build": "pnpm --dir apps/api build && pnpm --dir apps/web build",
-    "lint": "pnpm --dir apps/api lint && pnpm --dir apps/web lint"
+    "dev": "docker compose up -d && concurrently -n api,web,billing -c magenta,cyan,yellow \"pnpm --dir apps/api start:dev\" \"pnpm --dir apps/web dev\" \"pnpm --dir apps/billing dev\"",
+    "build": "pnpm --dir apps/api build && pnpm --dir apps/web build && pnpm --dir apps/billing build",
+    "lint": "pnpm --dir apps/api lint && pnpm --dir apps/web lint && pnpm --dir apps/billing lint"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

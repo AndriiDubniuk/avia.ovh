@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { BillingModule } from './billing/billing.module';
 import { validateEnv } from './config/env.validation';
 import { ContactRequestsModule } from './contact-requests/contact-requests.module';
 import { HealthModule } from './health/health.module';
@@ -35,6 +36,7 @@ function isSynchronizeEnabled() {
       }),
     }),
     HealthModule,
+    BillingModule,
     ContactRequestsModule,
   ],
   controllers: [AppController],

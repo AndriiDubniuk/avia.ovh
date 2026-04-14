@@ -47,7 +47,10 @@ function parseBoolean(value: unknown, fallback: boolean) {
 }
 
 export function validateEnv(config: RawEnv) {
+  const appEnv = parseString(config.APP_ENV, 'local');
+
   return {
+    APP_ENV: appEnv,
     PORT: parseNumber(config.PORT, 3001, 'PORT'),
     FRONTEND_ORIGIN: parseString(
       config.FRONTEND_ORIGIN,
@@ -59,6 +62,19 @@ export function validateEnv(config: RawEnv) {
     DB_PASSWORD: parseString(config.DB_PASSWORD, 'avia'),
     DB_NAME: parseString(config.DB_NAME, 'avia_agro'),
     DB_SSL: parseBoolean(config.DB_SSL, false),
-    TYPEORM_SYNCHRONIZE: parseBoolean(config.TYPEORM_SYNCHRONIZE, true),
+    TYPEORM_SYNCHRONIZE: parseBoolean(
+      config.TYPEORM_SYNCHRONIZE,
+      appEnv === 'local',
+    ),
+    MONOBANK_API_BASE_URL: parseString(
+      config.MONOBANK_API_BASE_URL,
+      'https://api.monobank.ua',
+    ),
+    MONOBANK_TOKEN: parseString(config.MONOBANK_TOKEN, ''),
+    IDEMPOTENCY_TTL_HOURS: parseNumber(
+      config.IDEMPOTENCY_TTL_HOURS,
+      72,
+      'IDEMPOTENCY_TTL_HOURS',
+    ),
   };
 }

@@ -12,7 +12,8 @@ export class PaymentsController {
   @Get(':id/payment-attempts')
   async listBySubscription(@Param('id') subscriptionId: string) {
     await this.subscriptionsService.findByIdOrFail(subscriptionId);
-    const attempts = await this.paymentsService.listBySubscriptionId(subscriptionId);
+    const attempts =
+      await this.paymentsService.listBySubscriptionId(subscriptionId);
 
     return {
       items: attempts.map((attempt) => ({

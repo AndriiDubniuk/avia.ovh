@@ -1,4 +1,8 @@
-import { INestApplication, UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
+import {
+  INestApplication,
+  UnprocessableEntityException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { Reflector } from '@nestjs/core';
@@ -12,11 +16,14 @@ import { IdempotencyInterceptor } from '../src/billing/idempotency/idempotency.i
 import { IdempotencyService } from '../src/billing/idempotency/idempotency.service';
 
 class InMemoryIdempotencyService {
-  private readonly records = new Map<string, {
-    requestHash: string;
-    responseStatus: number;
-    responseJson: Record<string, unknown>;
-  }>();
+  private readonly records = new Map<
+    string,
+    {
+      requestHash: string;
+      responseStatus: number;
+      responseJson: Record<string, unknown>;
+    }
+  >();
 
   async findByKeyAndRoute(idempotencyKey: string, route: string) {
     return this.records.get(`${idempotencyKey}:${route}`) ?? null;
@@ -82,20 +89,22 @@ describe('Billing Phase 1B (e2e)', () => {
 
     subscriptionsService.findByIdOrFail.mockResolvedValue({ id: 'sub-1' });
 
-    checkoutService.createCheckoutSession.mockImplementation(async (id: string) => {
-      if (id === 'bad-status') {
-        throw new UnprocessableEntityException('invalid state');
-      }
+    checkoutService.createCheckoutSession.mockImplementation(
+      async (id: string) => {
+        if (id === 'bad-status') {
+          throw new UnprocessableEntityException('invalid state');
+        }
 
-      return {
-        checkout_session_id: 'chk-1',
-        provider: 'monobank',
-        provider_invoice_id: 'inv-1',
-        checkout_url: 'https://pay.example',
-        status: 'created',
-        expires_at: '2026-04-14T00:30:00.000Z',
-      };
-    });
+        return {
+          checkout_session_id: 'chk-1',
+          provider: 'monobank',
+          provider_invoice_id: 'inv-1',
+          checkout_url: 'https://pay.example',
+          status: 'created',
+          expires_at: '2026-04-14T00:30:00.000Z',
+        };
+      },
+    );
 
     paymentsService.listBySubscriptionId.mockResolvedValue([
       {
@@ -291,5 +300,20 @@ describe('Billing Phase 1B (e2e)', () => {
       .expect(({ body }) => {
         expect(Array.isArray(body.items)).toBe(true);
       });
+  });
+
+  it('does not expose legacy billing plans route', async () => {
+    await request(app.getHttpServer()).get('/v1/billing/plans').expect(404);
+  });
+
+  it('does not expose legacy billing checkouts route', async () => {
+    await request(app.getHttpServer())
+      .post('/v1/billing/checkouts')
+      .send({
+        planCode: 'annual',
+        customerName: 'Test',
+        customerEmail: 'test@example.com',
+      })
+      .expect(404);
   });
 });

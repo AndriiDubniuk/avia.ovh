@@ -6,6 +6,7 @@ export const siteConfig = {
   primaryServiceName: "Розробка digital-продуктів під ключ",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://avia.ovh",
   apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api",
+  billingUrl: process.env.NEXT_PUBLIC_BILLING_URL ?? "https://billing.avia.ovh",
   portfolioUrl: "https://monibex.com",
 } as const;
 

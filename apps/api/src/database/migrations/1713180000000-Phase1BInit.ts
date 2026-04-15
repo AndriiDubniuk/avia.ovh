@@ -148,15 +148,25 @@ export class Phase1BInit1713180000000 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE "api_idempotency"`);
 
-    await queryRunner.query(`DROP INDEX "public"."IDX_payment_attempts_status_scheduled_for"`);
-    await queryRunner.query(`DROP INDEX "public"."IDX_payment_attempts_subscription_created_at"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_payment_attempts_status_scheduled_for"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_payment_attempts_subscription_created_at"`,
+    );
     await queryRunner.query(`DROP TABLE "payment_attempts"`);
 
-    await queryRunner.query(`DROP INDEX "public"."IDX_checkout_sessions_subscription_status"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_checkout_sessions_subscription_status"`,
+    );
     await queryRunner.query(`DROP TABLE "checkout_sessions"`);
 
-    await queryRunner.query(`DROP INDEX "public"."IDX_subscriptions_client_status"`);
-    await queryRunner.query(`DROP INDEX "public"."IDX_subscriptions_status_next_charge_at"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_subscriptions_client_status"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_subscriptions_status_next_charge_at"`,
+    );
     await queryRunner.query(`DROP TABLE "subscriptions"`);
 
     await queryRunner.query(`DROP TABLE "clients"`);

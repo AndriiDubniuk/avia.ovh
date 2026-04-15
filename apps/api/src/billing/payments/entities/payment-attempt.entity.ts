@@ -44,10 +44,20 @@ export class PaymentAttempt {
   @Column({ name: 'idempotency_key', type: 'varchar', length: 128 })
   idempotencyKey: string;
 
-  @Column({ name: 'provider_payment_id', type: 'varchar', length: 128, nullable: true })
+  @Column({
+    name: 'provider_payment_id',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+  })
   providerPaymentId: string | null;
 
-  @Column({ name: 'provider_invoice_id', type: 'varchar', length: 128, nullable: true })
+  @Column({
+    name: 'provider_invoice_id',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+  })
   providerInvoiceId: string | null;
 
   @Column({ name: 'failure_code', type: 'varchar', length: 64, nullable: true })

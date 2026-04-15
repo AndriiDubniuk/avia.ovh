@@ -49,11 +49,11 @@ services:
       - "traefik.http.middlewares.avia-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.avia-https-redirect.redirectscheme.permanent=true"
       - "traefik.http.middlewares.avia-api-strip.stripprefix.prefixes=/api"
-      - "traefik.http.routers.avia-api-http.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.avia-api-http.rule=(Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) || Host(`${BILLING_DOMAIN:?BILLING_DOMAIN is required}`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.avia-api-http.entrypoints=web"
       - "traefik.http.routers.avia-api-http.middlewares=avia-https-redirect"
       - "traefik.http.routers.avia-api-http.priority=100"
-      - "traefik.http.routers.avia-api.rule=Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.avia-api.rule=(Host(`${APP_DOMAIN:?APP_DOMAIN is required}`) || Host(`${BILLING_DOMAIN:?BILLING_DOMAIN is required}`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.avia-api.entrypoints=websecure"
       - "traefik.http.routers.avia-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.avia-api.middlewares=avia-api-strip"
@@ -100,6 +100,47 @@ services:
       - "traefik.http.routers.avia-web.tls.certresolver=letsencrypt"
       - "traefik.http.routers.avia-web.priority=10"
       - "traefik.http.services.avia-web.loadbalancer.server.port=3000"
+
+  billing:
+    image: ${BILLING_IMAGE_REF:?BILLING_IMAGE_REF is required}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    env_file:
+      - apps/billing/.env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3002/health').then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.middlewares.avia-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.avia-https-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.avia-billing-http.rule=Host(`${BILLING_DOMAIN:?BILLING_DOMAIN is required}`)"
+      - "traefik.http.routers.avia-billing-http.entrypoints=web"
+      - "traefik.http.routers.avia-billing-http.middlewares=avia-https-redirect"
+      - "traefik.http.routers.avia-billing-http.priority=20"
+      - "traefik.http.routers.avia-billing.rule=Host(`${BILLING_DOMAIN:?BILLING_DOMAIN is required}`)"
+      - "traefik.http.routers.avia-billing.entrypoints=websecure"
+      - "traefik.http.routers.avia-billing.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.avia-billing.priority=20"
+      - "traefik.http.services.avia-billing.loadbalancer.server.port=3002"
 
 volumes:
   postgres_data:

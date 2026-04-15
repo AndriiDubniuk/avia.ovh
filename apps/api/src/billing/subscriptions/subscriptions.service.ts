@@ -3,20 +3,31 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BILLING_CURRENCY } from '../billing.constants';
 import { ClientsService } from '../clients/clients.service';
+import { PaymentAttempt } from '../payments/entities/payment-attempt.entity';
+import { PaymentAttemptStatus } from '../payments/enums/payment-attempt-status.enum';
+import { PaymentAttemptType } from '../payments/enums/payment-attempt-type.enum';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { SubscriptionResponseDto } from './dto/subscription-response.dto';
 import { Subscription } from './entities/subscription.entity';
 import { SubscriptionStatus } from './enums/subscription-status.enum';
+import {
+  assertCanCancelSubscription,
+  isAlreadyCancelled,
+} from './subscription-transitions';
 
 @Injectable()
 export class SubscriptionsService {
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionsRepository: Repository<Subscription>,
+    @InjectRepository(PaymentAttempt)
+    private readonly paymentAttemptsRepository: Repository<PaymentAttempt>,
     private readonly clientsService: ClientsService,
   ) {}
 
-  async createSubscription(dto: CreateSubscriptionDto): Promise<SubscriptionResponseDto> {
+  async createSubscription(
+    dto: CreateSubscriptionDto,
+  ): Promise<SubscriptionResponseDto> {
     const timezone = dto.timezone?.trim() || 'Europe/Kyiv';
     const client = await this.clientsService.upsertByExternalRef({
       externalRef: dto.client.external_ref,
@@ -72,6 +83,46 @@ export class SubscriptionsService {
     }
 
     return subscription;
+  }
+
+  async cancelSubscription(id: string): Promise<SubscriptionResponseDto> {
+    const subscription = await this.findByIdOrFail(id);
+
+    if (isAlreadyCancelled(subscription.status)) {
+      return this.toResponse(subscription);
+    }
+
+    assertCanCancelSubscription(subscription.status);
+
+    const now = new Date();
+    await this.subscriptionsRepository.update(
+      { id: subscription.id },
+      {
+        status: SubscriptionStatus.Cancelled,
+        cancelRequestedAt: subscription.cancelRequestedAt ?? now,
+        cancelledAt: now,
+        nextChargeAt: null,
+      },
+    );
+
+    await this.paymentAttemptsRepository
+      .createQueryBuilder()
+      .update(PaymentAttempt)
+      .set({
+        status: PaymentAttemptStatus.Failed,
+        failureCode: 'cancelled',
+        failureMessage: 'Subscription cancelled before charge execution.',
+        finalizedAt: now,
+      })
+      .where('subscription_id = :subscriptionId', {
+        subscriptionId: subscription.id,
+      })
+      .andWhere('type = :type', { type: PaymentAttemptType.Recurring })
+      .andWhere('status = :status', { status: PaymentAttemptStatus.Pending })
+      .execute();
+
+    const updated = await this.findByIdOrFail(id);
+    return this.toResponse(updated);
   }
 
   private toResponse(subscription: Subscription): SubscriptionResponseDto {

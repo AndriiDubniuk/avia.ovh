@@ -13,7 +13,11 @@ function isSslEnabled() {
 }
 
 function isSynchronizeEnabled() {
-  return process.env.TYPEORM_SYNCHRONIZE !== 'false';
+  if (process.env.TYPEORM_SYNCHRONIZE !== undefined) {
+    return process.env.TYPEORM_SYNCHRONIZE === 'true';
+  }
+
+  return (process.env.APP_ENV ?? 'local') === 'local';
 }
 
 @Module({
@@ -36,8 +40,8 @@ function isSynchronizeEnabled() {
       }),
     }),
     HealthModule,
-    ContactRequestsModule,
     BillingModule,
+    ContactRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

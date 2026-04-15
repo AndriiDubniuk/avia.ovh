@@ -1,7 +1,4 @@
-import {
-  IsBoolean,
-  IsUrl,
-} from 'class-validator';
+import { IsBoolean, IsUrl } from 'class-validator';
 
 export class CreateCheckoutSessionDto {
   @IsUrl({ protocols: ['https'], require_protocol: true })

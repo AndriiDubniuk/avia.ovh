@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { config as loadEnv } from 'dotenv';
 
@@ -24,6 +25,12 @@ export default new DataSource({
           rejectUnauthorized: false,
         }
       : false,
-  entities: ['src/**/*.entity.ts', 'dist/**/*.entity.js'],
-  migrations: ['src/database/migrations/*.ts', 'dist/database/migrations/*.js'],
+  entities: [
+    join(__dirname, '..', '**', '*.entity.ts'),
+    join(__dirname, '..', '**', '*.entity.js'),
+  ],
+  migrations: [
+    join(__dirname, 'migrations', '*.ts'),
+    join(__dirname, 'migrations', '*.js'),
+  ],
 });

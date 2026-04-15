@@ -1,4 +1,5 @@
 type RawEnv = Record<string, unknown>;
+type MonobankMode = 'mock' | 'real';
 
 function parseString(value: unknown, fallback: string) {
   if (typeof value === 'string') {
@@ -46,8 +47,41 @@ function parseBoolean(value: unknown, fallback: boolean) {
   return fallback;
 }
 
+function parseMonobankMode(value: unknown): MonobankMode {
+  const normalized = parseString(value, 'mock').trim().toLowerCase();
+
+  if (normalized === 'mock' || normalized === 'real') {
+    return normalized;
+  }
+
+  throw new Error(
+    'Environment variable MONOBANK_MODE must be either "mock" or "real".',
+  );
+}
+
+function isPlaceholderToken(value: string) {
+  const normalized = value.trim().toLowerCase();
+  const placeholders = new Set([
+    '',
+    'your_token',
+    'your-monobank-token',
+    'changeme',
+    'placeholder',
+  ]);
+
+  return placeholders.has(normalized);
+}
+
 export function validateEnv(config: RawEnv) {
   const appEnv = parseString(config.APP_ENV, 'local');
+  const monobankMode = parseMonobankMode(config.MONOBANK_MODE);
+  const monobankToken = parseString(config.MONOBANK_TOKEN, '');
+
+  if (monobankMode === 'real' && isPlaceholderToken(monobankToken)) {
+    throw new Error(
+      'MONOBANK_TOKEN is required in MONOBANK_MODE=real and cannot be a placeholder value.',
+    );
+  }
 
   return {
     APP_ENV: appEnv,
@@ -70,11 +104,46 @@ export function validateEnv(config: RawEnv) {
       config.MONOBANK_API_BASE_URL,
       'https://api.monobank.ua',
     ),
-    MONOBANK_TOKEN: parseString(config.MONOBANK_TOKEN, ''),
+    MONOBANK_MODE: monobankMode,
+    MONOBANK_TOKEN: monobankToken,
+    TOKEN_ENCRYPTION_KEY: parseString(config.TOKEN_ENCRYPTION_KEY, ''),
     IDEMPOTENCY_TTL_HOURS: parseNumber(
       config.IDEMPOTENCY_TTL_HOURS,
       72,
       'IDEMPOTENCY_TTL_HOURS',
+    ),
+    BILLING_PUBLIC_URL: parseString(
+      config.BILLING_PUBLIC_URL,
+      'http://localhost:3002',
+    ),
+    BILLING_PUBLIC_API_URL: parseString(
+      config.BILLING_PUBLIC_API_URL,
+      'http://localhost:3001',
+    ),
+    BILLING_PERSONAL_LINK_BASE_URL: parseString(
+      config.BILLING_PERSONAL_LINK_BASE_URL,
+      '',
+    ),
+    BILLING_PERSONAL_LINK_TTL_HOURS: parseNumber(
+      config.BILLING_PERSONAL_LINK_TTL_HOURS,
+      72,
+      'BILLING_PERSONAL_LINK_TTL_HOURS',
+    ),
+    BILLING_PRIVATE_MODE: parseBoolean(config.BILLING_PRIVATE_MODE, false),
+    BILLING_PLANS_JSON: parseString(config.BILLING_PLANS_JSON, ''),
+    BILLING_PORTAL_MAGIC_TTL_MINUTES: parseNumber(
+      config.BILLING_PORTAL_MAGIC_TTL_MINUTES,
+      15,
+      'BILLING_PORTAL_MAGIC_TTL_MINUTES',
+    ),
+    BILLING_PORTAL_SESSION_TTL_HOURS: parseNumber(
+      config.BILLING_PORTAL_SESSION_TTL_HOURS,
+      24,
+      'BILLING_PORTAL_SESSION_TTL_HOURS',
+    ),
+    BILLING_PORTAL_COOKIE_NAME: parseString(
+      config.BILLING_PORTAL_COOKIE_NAME,
+      'billing_portal_session',
     ),
   };
 }

@@ -10,7 +10,9 @@ function sortValue(value: unknown): unknown {
       ([a], [b]) => a.localeCompare(b),
     );
 
-    return Object.fromEntries(entries.map(([key, val]) => [key, sortValue(val)]));
+    return Object.fromEntries(
+      entries.map(([key, val]) => [key, sortValue(val)]),
+    );
   }
 
   return value;

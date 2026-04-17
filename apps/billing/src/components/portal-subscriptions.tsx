@@ -14,7 +14,7 @@ type PortalSubscriptionItem = {
   created_at: string;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
 function formatDate(value: string | null) {
   if (!value) {

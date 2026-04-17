@@ -19,7 +19,7 @@ type SubscriptionSnapshot = {
   retry_count?: number;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
 
 function formatDate(value: string | null) {

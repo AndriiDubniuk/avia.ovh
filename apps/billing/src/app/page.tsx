@@ -1,6 +1,8 @@
 import { BillingHome } from "@/components/billing-home";
 import { BillingPrivateMode } from "@/components/billing-private-mode";
 
+export const dynamic = "force-dynamic";
+
 function isBillingPrivateModeEnabled() {
   const rawValue =
     process.env.BILLING_PRIVATE_MODE ??

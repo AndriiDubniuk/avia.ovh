@@ -175,7 +175,26 @@ jobs:
           docker compose --env-file .env.production -f docker-compose.deploy.yml up -d api
           docker compose --env-file .env.production -f docker-compose.deploy.yml up -d web billing
 
-          if ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/health >/dev/null || ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/api/v1/health >/dev/null || ! curl -fsS -H "Host: billing.avia.ovh" http://127.0.0.1/health >/dev/null; then
+          check_url() {
+            local host="\$1"
+            local path="\$2"
+            local attempts=30
+            local delay=5
+
+            for i in \$(seq 1 "\$attempts"); do
+              if curl -fsS -H "Host: \${host}" "http://127.0.0.1\${path}" >/dev/null; then
+                echo "Health check passed: host=\${host} path=\${path}"
+                return 0
+              fi
+              echo "Health check retry \${i}/\${attempts}: host=\${host} path=\${path}"
+              sleep "\$delay"
+            done
+
+            echo "Health check failed: host=\${host} path=\${path}"
+            return 1
+          }
+
+          if ! check_url "avia.ovh" "/health" || ! check_url "avia.ovh" "/api/v1/health" || ! check_url "billing.avia.ovh" "/health"; then
             if [ -f ".env.production.bak.\${BACKUP_SUFFIX}" ]; then
               cp ".env.production.bak.\${BACKUP_SUFFIX}" .env.production
               docker compose --env-file .env.production -f docker-compose.deploy.yml up -d web api billing

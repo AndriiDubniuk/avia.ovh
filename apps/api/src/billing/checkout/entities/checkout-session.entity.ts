@@ -9,6 +9,7 @@ import { CheckoutStatus } from '../enums/checkout-status.enum';
 
 @Entity({ name: 'checkout_sessions' })
 @Index(['providerInvoiceId'], { unique: true })
+@Index(['providerSubscriptionId'])
 @Index(['subscriptionId', 'status'])
 export class CheckoutSession {
   @PrimaryGeneratedColumn('uuid')
@@ -22,6 +23,14 @@ export class CheckoutSession {
 
   @Column({ name: 'provider_invoice_id', type: 'varchar', length: 128 })
   providerInvoiceId: string;
+
+  @Column({
+    name: 'provider_subscription_id',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+  })
+  providerSubscriptionId: string | null;
 
   @Column({ name: 'checkout_url', type: 'text' })
   checkoutUrl: string;

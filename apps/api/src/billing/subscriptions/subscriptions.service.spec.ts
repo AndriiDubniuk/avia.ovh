@@ -6,12 +6,14 @@ import { SubscriptionStatus } from './enums/subscription-status.enum';
 import { PaymentAttempt } from '../payments/entities/payment-attempt.entity';
 import { ClientsService } from '../clients/clients.service';
 import { UnprocessableEntityException } from '@nestjs/common';
+import { MonobankAcquiringService } from '../monobank-acquiring.service';
 
 function makeSubscription(status: SubscriptionStatus): Subscription {
   return {
     id: 'sub-1',
     clientId: 'client-1',
     paymentMethodId: 'pm-1',
+    providerSubscriptionId: 'mono-sub-1',
     status,
     amountMinor: 29900,
     currency: 'UAH',
@@ -34,6 +36,7 @@ describe('SubscriptionsService cancellation', () => {
   let service: SubscriptionsService;
   let subscriptionsRepository: jest.Mocked<Repository<Subscription>>;
   let paymentAttemptsRepository: jest.Mocked<Repository<PaymentAttempt>>;
+  let monobankAcquiringService: jest.Mocked<MonobankAcquiringService>;
 
   beforeEach(() => {
     const queryBuilder = {
@@ -55,10 +58,15 @@ describe('SubscriptionsService cancellation', () => {
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     } as unknown as jest.Mocked<Repository<PaymentAttempt>>;
 
+    monobankAcquiringService = {
+      cancelSubscription: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<MonobankAcquiringService>;
+
     service = new SubscriptionsService(
       subscriptionsRepository,
       paymentAttemptsRepository,
       {} as ClientsService,
+      monobankAcquiringService,
     );
   });
 
@@ -82,6 +90,9 @@ describe('SubscriptionsService cancellation', () => {
 
       const result = await service.cancelSubscription('sub-1');
 
+      expect(monobankAcquiringService.cancelSubscription).toHaveBeenCalledWith(
+        'mono-sub-1',
+      );
       expect(subscriptionsRepository.update).toHaveBeenCalledWith(
         { id: 'sub-1' },
         expect.objectContaining({

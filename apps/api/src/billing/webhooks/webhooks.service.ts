@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
@@ -15,6 +16,7 @@ import {
   getEventKey,
   getEventType,
   getInvoiceId,
+  getSubscriptionId,
   getProviderPaymentId,
   getStatus,
 } from './webhooks.utils';
@@ -26,13 +28,18 @@ import { SubscriptionStatus } from '../subscriptions/enums/subscription-status.e
 import { PaymentAttemptStatus } from '../payments/enums/payment-attempt-status.enum';
 import { PaymentAttemptType } from '../payments/enums/payment-attempt-type.enum';
 import { PaymentMethodsService } from '../payment-methods/payment-methods.service';
+import { Client } from '../clients/entities/client.entity';
+import { BillingEmailService } from '../emails/billing-email.service';
 
 @Injectable()
 export class WebhooksService {
+  private readonly logger = new Logger(WebhooksService.name);
+
   constructor(
     private readonly monobankClientService: MonobankClientService,
     private readonly webhookEventsService: WebhookEventsService,
     private readonly paymentMethodsService: PaymentMethodsService,
+    private readonly billingEmailService: BillingEmailService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -61,12 +68,7 @@ export class WebhooksService {
 
     try {
       const mapped = await this.processEventPayload(event.payloadJson);
-
-      if (mapped.tokenMissing) {
-        await this.webhookEventsService.markFailed(event.id, 'token missing');
-        return { ok: false, reason: 'token_missing' };
-      }
-
+      await this.trySendMappedEmails(mapped);
       await this.webhookEventsService.markProcessed(event.id);
       return { ok: true, replayed: true };
     } catch (error) {
@@ -100,6 +102,7 @@ export class WebhooksService {
     const payload: Record<string, unknown> = {
       type: 'payment',
       invoiceId: checkout.providerInvoiceId,
+      subscriptionId: checkout.providerSubscriptionId,
       paymentId: `mock-${mode}-${Date.now()}`,
       modifiedDate: now,
       status: mode,
@@ -145,12 +148,7 @@ export class WebhooksService {
 
     try {
       const mapped = await this.processEventPayload(payload);
-
-      if (mapped.tokenMissing) {
-        await this.webhookEventsService.markFailed(eventId, 'token missing');
-        return { ok: false, reason: 'token_missing' };
-      }
-
+      await this.trySendMappedEmails(mapped);
       await this.webhookEventsService.markProcessed(eventId);
       return { ok: true };
     } catch (error) {
@@ -166,16 +164,22 @@ export class WebhooksService {
   private async processEventPayload(payload: Record<string, unknown>) {
     return this.dataSource.transaction(async (manager) => {
       const invoiceId = getInvoiceId(payload);
-      if (!invoiceId) {
-        throw new BadRequestException('Webhook payload missing invoiceId.');
+      const providerSubscriptionId = getSubscriptionId(payload);
+      if (!invoiceId && !providerSubscriptionId) {
+        throw new BadRequestException(
+          'Webhook payload missing invoiceId/subscriptionId.',
+        );
       }
 
       const checkoutRepository = manager.getRepository(CheckoutSession);
       const subscriptionRepository = manager.getRepository(Subscription);
+      const clientsRepository = manager.getRepository(Client);
       const paymentAttemptsRepository = manager.getRepository(PaymentAttempt);
 
       const checkout = await checkoutRepository.findOne({
-        where: { providerInvoiceId: invoiceId },
+        where: providerSubscriptionId
+          ? { providerSubscriptionId }
+          : { providerInvoiceId: invoiceId! },
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -191,22 +195,26 @@ export class WebhooksService {
       if (!subscription) {
         throw new BadRequestException('Subscription not found for checkout.');
       }
+      const client = await clientsRepository.findOne({
+        where: { id: subscription.clientId },
+      });
+
+      if (!client) {
+        throw new BadRequestException('Client not found for subscription.');
+      }
 
       const initialAttempt = await paymentAttemptsRepository.findOne({
         where: {
           checkoutSessionId: checkout.id,
           type: PaymentAttemptType.Initial,
+          status: PaymentAttemptStatus.Pending,
         },
         order: { createdAt: 'DESC' },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!initialAttempt) {
-        throw new BadRequestException('Initial payment attempt not found.');
-      }
-
       if (subscription.status === SubscriptionStatus.Cancelled) {
-        return { tokenMissing: false, status: 'cancelled' };
+        return { status: 'cancelled' };
       }
 
       const status = getStatus(payload);
@@ -217,30 +225,43 @@ export class WebhooksService {
           { id: checkout.id },
           { status: CheckoutStatus.Paid },
         );
-
-        await paymentAttemptsRepository.update(
-          { id: initialAttempt.id },
-          {
-            status: PaymentAttemptStatus.Success,
-            providerPaymentId,
-            finalizedAt: new Date(),
-            failureCode: null,
-            failureMessage: null,
-          },
-        );
-
-        const token = extractToken(payload);
-        if (!token) {
-          await subscriptionRepository.update(
-            { id: subscription.id },
+        if (initialAttempt) {
+          await paymentAttemptsRepository.update(
+            { id: initialAttempt.id },
             {
-              status: SubscriptionStatus.FailedInitialPayment,
+              status: PaymentAttemptStatus.Success,
+              providerPaymentId,
+              finalizedAt: new Date(),
+              failureCode: null,
+              failureMessage: null,
             },
           );
-          return { tokenMissing: true, status: 'success_no_token' };
+        } else {
+          const recurringKey = `native:${subscription.id}:${new Date().toISOString().slice(0, 7)}`;
+          await paymentAttemptsRepository.save(
+            paymentAttemptsRepository.create({
+              subscriptionId: subscription.id,
+              paymentMethodId: subscription.paymentMethodId,
+              checkoutSessionId: null,
+              type: PaymentAttemptType.Recurring,
+              status: PaymentAttemptStatus.Success,
+              amountMinor: subscription.amountMinor,
+              currency: subscription.currency,
+              billingPeriodKey: recurringKey,
+              idempotencyKey: `native:${checkout.id}:${providerPaymentId ?? Date.now()}`,
+              providerPaymentId: providerPaymentId ?? null,
+              providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
+              failureCode: null,
+              failureMessage: null,
+              retryNo: 0,
+              scheduledFor: null,
+              finalizedAt: new Date(),
+            }),
+          );
         }
 
-        const paymentMethod =
+        const token = extractToken(payload);
+        if (token) {
           await this.paymentMethodsService.upsertDefaultMonobankToken(
             {
               clientId: subscription.clientId,
@@ -251,6 +272,11 @@ export class WebhooksService {
             },
             manager,
           );
+        } else {
+          this.logger.warn(
+            `Monobank success webhook without card token. invoiceId=${invoiceId ?? '-'}, checkoutId=${checkout.id}, subscriptionId=${subscription.id}`,
+          );
+        }
 
         const schedule = computeNextChargeDates({
           interval: subscription.interval,
@@ -261,14 +287,36 @@ export class WebhooksService {
         await subscriptionRepository.update(
           { id: subscription.id },
           {
-            paymentMethodId: paymentMethod.id,
+            providerSubscriptionId:
+              providerSubscriptionId ?? subscription.providerSubscriptionId,
             status: SubscriptionStatus.Active,
             nextChargeAt: schedule.nextChargeAt,
             periodEndAt: schedule.periodEndAt,
           },
         );
 
-        return { tokenMissing: false, status: 'success' };
+        return {
+          status: 'success',
+          email: {
+            kind: (initialAttempt
+              ? 'initial_success'
+              : 'recurring_success') as
+              | 'initial_success'
+              | 'recurring_success',
+            eventKey: `${initialAttempt ? `initial:${initialAttempt.id}` : `recurring:${checkout.id}`}:success`,
+            subscription,
+            paymentAttempt: {
+              ...(initialAttempt ?? ({} as PaymentAttempt)),
+              status: PaymentAttemptStatus.Success,
+              finalizedAt: new Date(),
+              providerPaymentId,
+              failureCode: null,
+              failureMessage: null,
+            } as PaymentAttempt,
+            client,
+            checkoutId: checkout.id,
+          },
+        };
       }
 
       const isExpired = status === 'expired';
@@ -282,25 +330,114 @@ export class WebhooksService {
         { status: checkoutStatus },
       );
 
-      await paymentAttemptsRepository.update(
-        { id: initialAttempt.id },
-        {
-          status: PaymentAttemptStatus.Failed,
-          failureCode,
-          failureMessage: null,
-          finalizedAt: new Date(),
-        },
-      );
+      if (initialAttempt) {
+        await paymentAttemptsRepository.update(
+          { id: initialAttempt.id },
+          {
+            status: PaymentAttemptStatus.Failed,
+            failureCode,
+            failureMessage: null,
+            finalizedAt: new Date(),
+          },
+        );
+
+        await subscriptionRepository.update(
+          { id: subscription.id },
+          {
+            status: SubscriptionStatus.FailedInitialPayment,
+          },
+        );
+
+        return {
+          status: isExpired ? 'expired' : 'failure',
+          email: {
+            kind: 'initial_failure' as const,
+            eventKey: `initial:${initialAttempt.id}:${isExpired ? 'expired' : 'failure'}`,
+            subscription: {
+              ...subscription,
+              status: SubscriptionStatus.FailedInitialPayment,
+            } as Subscription,
+            paymentAttempt: {
+              ...initialAttempt,
+              status: PaymentAttemptStatus.Failed,
+              finalizedAt: new Date(),
+              failureCode,
+              failureMessage: null,
+            } as PaymentAttempt,
+            client,
+            checkoutId: checkout.id,
+          },
+        };
+      }
+
+      const recurringAttempt = paymentAttemptsRepository.create({
+        subscriptionId: subscription.id,
+        paymentMethodId: subscription.paymentMethodId,
+        checkoutSessionId: null,
+        type: PaymentAttemptType.Recurring,
+        status: PaymentAttemptStatus.Failed,
+        amountMinor: subscription.amountMinor,
+        currency: subscription.currency,
+        billingPeriodKey: `native:${subscription.id}:${new Date().toISOString().slice(0, 7)}`,
+        idempotencyKey: `native:${checkout.id}:fail:${Date.now()}`,
+        providerPaymentId: providerPaymentId ?? null,
+        providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
+        failureCode,
+        failureMessage: null,
+        retryNo: 0,
+        scheduledFor: null,
+        finalizedAt: new Date(),
+      });
+      await paymentAttemptsRepository.save(recurringAttempt);
 
       await subscriptionRepository.update(
         { id: subscription.id },
         {
-          status: SubscriptionStatus.FailedInitialPayment,
+          status: SubscriptionStatus.PastDue,
+          lastFailureAt: new Date(),
         },
       );
 
-      return { tokenMissing: false, status: isExpired ? 'expired' : 'failure' };
+      return {
+        status: isExpired ? 'expired' : 'failure',
+        email: {
+          kind: 'recurring_failure' as const,
+          eventKey: `recurring:${recurringAttempt.id}:${isExpired ? 'expired' : 'failure'}`,
+          subscription: {
+            ...subscription,
+            status: SubscriptionStatus.PastDue,
+          } as Subscription,
+          paymentAttempt: recurringAttempt,
+          client,
+          checkoutId: checkout.id,
+        },
+      };
     });
+  }
+
+  private async trySendMappedEmails(mapped: {
+    email?: {
+      kind:
+        | 'initial_success'
+        | 'initial_failure'
+        | 'recurring_success'
+        | 'recurring_failure';
+      eventKey: string;
+      subscription: Subscription;
+      paymentAttempt: PaymentAttempt;
+      client: Client;
+      checkoutId?: string | null;
+    };
+  }) {
+    if (!mapped.email) {
+      return;
+    }
+
+    try {
+      await this.billingEmailService.sendPaymentOutcomeEmails(mapped.email);
+    } catch {
+      // Billing flow state remains source of truth; email failures are non-fatal.
+    }
   }
 
   private parsePayload(rawBody: Buffer): Record<string, unknown> {

@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from '../clients/entities/client.entity';
+import { BillingEmailService } from '../emails/billing-email.service';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
@@ -49,6 +50,12 @@ describe('PortalService', () => {
           useValue: {
             getSubscription: jest.fn(),
             cancelSubscription: jest.fn(),
+          },
+        },
+        {
+          provide: BillingEmailService,
+          useValue: {
+            sendPortalMagicLinkEmail: jest.fn().mockResolvedValue(undefined),
           },
         },
         {

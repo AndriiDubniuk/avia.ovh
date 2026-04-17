@@ -126,7 +126,7 @@ export function PortalSubscriptions() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-sm uppercase tracking-[0.22em] text-black/45">Subscription</p>
-                      <p className="mt-2 font-mono text-sm">{item.subscription_id}</p>
+                      <p className="mt-2 break-all font-mono text-sm">{item.subscription_id}</p>
                     </div>
                     <div className="rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-sm font-medium">
                       {item.status}
@@ -143,7 +143,7 @@ export function PortalSubscriptions() {
                   <div className="mt-5">
                     <Link
                       href={`/portal/subscriptions/${encodeURIComponent(item.subscription_id)}`}
-                      className="inline-flex rounded-full bg-black px-6 py-3 text-sm font-semibold text-white hover:-translate-y-0.5"
+                      className="inline-flex w-full justify-center rounded-full bg-black px-6 py-3 text-sm font-semibold text-white hover:-translate-y-0.5 sm:w-auto"
                     >
                       Відкрити деталі
                     </Link>

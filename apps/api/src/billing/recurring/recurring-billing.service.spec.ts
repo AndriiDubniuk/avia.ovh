@@ -4,6 +4,7 @@ import { RecurringBillingService } from './recurring-billing.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PaymentMethodsService } from '../payment-methods/payment-methods.service';
 import { MonobankClientService } from '../monobank/monobank-client.service';
+import { BillingEmailService } from '../emails/billing-email.service';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { SubscriptionStatus } from '../subscriptions/enums/subscription-status.enum';
 import { SubscriptionInterval } from '../subscriptions/enums/subscription-interval.enum';
@@ -39,6 +40,7 @@ describe('RecurringBillingService', () => {
   let paymentsService: jest.Mocked<PaymentsService>;
   let paymentMethodsService: jest.Mocked<PaymentMethodsService>;
   let monobankClientService: jest.Mocked<MonobankClientService>;
+  let billingEmailService: jest.Mocked<BillingEmailService>;
 
   let subscriptionRepository: jest.Mocked<Repository<Subscription>>;
   let paymentAttemptRepository: jest.Mocked<Repository<PaymentAttempt>>;
@@ -109,12 +111,16 @@ describe('RecurringBillingService', () => {
     monobankClientService = {
       createRecurringCharge: jest.fn(),
     } as unknown as jest.Mocked<MonobankClientService>;
+    billingEmailService = {
+      sendPaymentOutcomeEmails: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<BillingEmailService>;
 
     service = new RecurringBillingService(
       dataSource,
       paymentsService,
       paymentMethodsService,
       monobankClientService,
+      billingEmailService,
     );
   });
 

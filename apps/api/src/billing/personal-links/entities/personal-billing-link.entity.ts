@@ -18,11 +18,11 @@ export class PersonalBillingLink {
   @Column({ name: 'plan_code', type: 'varchar', length: 100 })
   planCode: string;
 
-  @Column({ name: 'customer_name', type: 'varchar', length: 160 })
-  customerName: string;
+  @Column({ name: 'customer_name', type: 'varchar', length: 160, nullable: true })
+  customerName: string | null;
 
-  @Column({ name: 'customer_email', type: 'varchar', length: 320 })
-  customerEmail: string;
+  @Column({ name: 'customer_email', type: 'varchar', length: 320, nullable: true })
+  customerEmail: string | null;
 
   @Column({ name: 'company_name', type: 'varchar', length: 160, nullable: true })
   companyName: string | null;

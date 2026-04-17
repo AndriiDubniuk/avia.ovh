@@ -18,6 +18,7 @@ function createRepositoryMock<T>() {
 describe('PersonalBillingLinksService', () => {
   let service: PersonalBillingLinksService;
   let repository: jest.Mocked<Repository<PersonalBillingLink>>;
+  let billingService: jest.Mocked<BillingService>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -54,24 +55,25 @@ describe('PersonalBillingLinksService', () => {
 
     service = module.get(PersonalBillingLinksService);
     repository = module.get(getRepositoryToken(PersonalBillingLink));
+    billingService = module.get(BillingService);
   });
 
   it('creates tokenized personal url', async () => {
     repository.save.mockResolvedValue({
       id: 'link-1',
-      customerName: 'Client',
-      customerEmail: 'client@example.com',
+      customerName: null,
+      customerEmail: null,
       expiresAt: new Date('2026-04-20T00:00:00.000Z'),
     } as PersonalBillingLink);
 
     const result = await service.createLink({
       planCode: 'annual',
-      customerName: 'Client',
-      customerEmail: 'client@example.com',
     });
 
     expect(result.link_id).toBe('link-1');
     expect(result.personal_url).toContain('/pay/');
+    expect(result.customer.name).toBeNull();
+    expect(result.customer.email).toBeNull();
   });
 
   it('rejects unknown personal token', async () => {
@@ -79,6 +81,31 @@ describe('PersonalBillingLinksService', () => {
 
     await expect(service.getOfferByToken('bad-token')).rejects.toBeInstanceOf(
       NotFoundException,
+    );
+  });
+
+  it('creates checkout with submitted customer fields', async () => {
+    repository.findOne.mockResolvedValue({
+      planCode: 'annual',
+      customerName: 'Preset Name',
+      customerEmail: 'preset@example.com',
+      companyName: 'ACME',
+      timezone: 'Europe/Kyiv',
+      revokedAt: null,
+      expiresAt: new Date('2099-01-01T00:00:00.000Z'),
+    } as PersonalBillingLink);
+
+    await service.createCheckoutByToken('valid-token', {
+      customerName: 'Edited Name',
+      customerEmail: 'edited@example.com',
+    });
+
+    expect(billingService.createCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        planCode: 'annual',
+        customerName: 'Edited Name',
+        customerEmail: 'edited@example.com',
+      }),
     );
   });
 });

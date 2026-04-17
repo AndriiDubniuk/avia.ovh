@@ -9,6 +9,7 @@ import { createHash, randomBytes } from 'crypto';
 import { IsNull, Repository } from 'typeorm';
 import { findPublicBillingPlan } from '../billing.catalog';
 import { BillingService } from '../billing.service';
+import { PersonalLinkCheckoutDto } from './dto/personal-link-checkout.dto';
 import { PersonalBillingLink } from './entities/personal-billing-link.entity';
 import { CreatePersonalBillingLinkDto } from './dto/create-personal-billing-link.dto';
 
@@ -46,8 +47,8 @@ export class PersonalBillingLinksService {
       this.linksRepository.create({
         tokenHash,
         planCode: plan.code,
-        customerName: input.customerName.trim(),
-        customerEmail: input.customerEmail.trim().toLowerCase(),
+        customerName: input.customerName?.trim() || null,
+        customerEmail: input.customerEmail?.trim().toLowerCase() || null,
         companyName: input.companyName?.trim() || null,
         timezone: input.timezone?.trim() || null,
         expiresAt,
@@ -72,8 +73,8 @@ export class PersonalBillingLinksService {
         price_label: plan.priceLabel,
       },
       customer: {
-        name: saved.customerName,
-        email: saved.customerEmail,
+        name: saved.customerName ?? null,
+        email: saved.customerEmail ?? null,
       },
     };
   }
@@ -98,20 +99,29 @@ export class PersonalBillingLinksService {
         note: plan.note,
       },
       customer: {
-        name: link.customerName,
-        email: link.customerEmail,
+        name: link.customerName ?? null,
+        email: link.customerEmail ?? null,
         company_name: link.companyName,
       },
     };
   }
 
-  async createCheckoutByToken(token: string) {
+  async createCheckoutByToken(token: string, input: PersonalLinkCheckoutDto) {
     const link = await this.findValidLinkByToken(token);
+    const customerName = input.customerName?.trim();
+    const customerEmail = input.customerEmail?.trim().toLowerCase();
+
+    if (!customerName || customerName.length < 2) {
+      throw new BadRequestException('customerName must be at least 2 characters.');
+    }
+    if (!customerEmail || !customerEmail.includes('@')) {
+      throw new BadRequestException('customerEmail must be a valid email.');
+    }
 
     return this.billingService.createCheckout({
       planCode: link.planCode,
-      customerName: link.customerName,
-      customerEmail: link.customerEmail,
+      customerName,
+      customerEmail,
       companyName: link.companyName ?? undefined,
       timezone: link.timezone ?? undefined,
     });

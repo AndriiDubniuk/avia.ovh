@@ -51,27 +51,27 @@ export default function Home() {
       <div className="pointer-events-none absolute left-[-8rem] top-[30rem] h-[24rem] w-[24rem] rounded-full bg-[radial-gradient(circle,rgba(212,180,110,0.18),transparent_62%)] blur-3xl" />
 
       <header className="sticky top-0 z-20 border-b border-white/20 bg-[#f8f3e7]/85 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-4 lg:px-8">
           <LogoMark />
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground lg:flex">
-            <Link href="#services" className="hover:text-foreground">
+            <Link href="/#services" className="hover:text-foreground">
               Послуги
             </Link>
-            <Link href="#portfolio" className="hover:text-foreground">
+            <Link href="/#portfolio" className="hover:text-foreground">
               Кейси
             </Link>
-            <Link href="#process" className="hover:text-foreground">
+            <Link href="/#process" className="hover:text-foreground">
               Процес
             </Link>
-            <Link href="#offer" className="hover:text-foreground">
+            <Link href="/#offer" className="hover:text-foreground">
               Умови
             </Link>
-            <Link href="#contact" className="hover:text-foreground">
+            <Link href="/#contact" className="hover:text-foreground">
               Контакти
             </Link>
           </nav>
-          <Button asChild className="h-10 px-4 text-xs sm:h-11 sm:px-6 sm:text-sm">
-            <Link href="#contact">Подати заявку</Link>
+          <Button asChild className="h-10 w-full px-4 text-xs sm:h-11 sm:w-auto sm:px-6 sm:text-sm">
+            <Link href="/#contact">Подати заявку</Link>
           </Button>
         </div>
       </header>
@@ -95,14 +95,14 @@ export default function Home() {
               </p>
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <Button asChild size="lg" className="rounded-full px-8">
-                  <Link href="#contact">
+                <Button asChild size="lg" className="w-full rounded-full px-8 sm:w-auto">
+                  <Link href="/#contact">
                     Обговорити задачу
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="rounded-full px-8">
-                  <Link href="#services">Подивитися пакети</Link>
+                <Button asChild size="lg" variant="outline" className="w-full rounded-full px-8 sm:w-auto">
+                  <Link href="/#services">Подивитися пакети</Link>
                 </Button>
               </div>
 
@@ -225,7 +225,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="services" className="py-20">
+        <section id="services" className="scroll-mt-28 py-20">
           <div className="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <div className="mb-10 max-w-3xl">
               <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">
@@ -289,7 +289,7 @@ export default function Home() {
                     </div>
 
                     <Button asChild variant="outline" className="rounded-full px-6">
-                      <Link href="#contact">Хочу таку послугу</Link>
+                      <Link href="/#contact">Хочу таку послугу</Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -298,7 +298,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="portfolio" className="py-8">
+        <section id="portfolio" className="scroll-mt-28 py-8">
           <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8">
             <div className="grid gap-5">
               <Card className="border-primary/10 bg-primary text-primary-foreground shadow-[0_24px_80px_-50px_rgba(17,34,23,0.7)]">
@@ -403,7 +403,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="process" className="py-20">
+        <section id="process" className="scroll-mt-28 py-20">
           <div className="mx-auto w-full max-w-7xl px-6 lg:px-8">
             <div className="mb-10 max-w-3xl">
               <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">
@@ -434,7 +434,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="offer" className="py-20">
+        <section id="offer" className="scroll-mt-28 py-20">
           <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">
@@ -481,7 +481,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="contact" className="pb-24 pt-10">
+        <section id="contact" className="scroll-mt-28 pb-24 pt-10">
           <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 lg:grid-cols-[0.88fr_1.12fr] lg:px-8">
             <div className="space-y-6">
               <div>
@@ -565,7 +565,7 @@ export default function Home() {
             <Link href="/privacy" className="hover:text-foreground">
               Політика конфіденційності
             </Link>
-            <Link href="#contact" className="hover:text-foreground">
+            <Link href="/#contact" className="hover:text-foreground">
               Подати заявку
             </Link>
           </div>

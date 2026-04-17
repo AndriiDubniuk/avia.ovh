@@ -13,6 +13,7 @@ import { SubscriptionStatus } from '../enums/subscription-status.enum';
 @Entity({ name: 'subscriptions' })
 @Index(['status', 'nextChargeAt'])
 @Index(['clientId', 'status'])
+@Index(['providerSubscriptionId'], { unique: true })
 @Check('CHK_subscriptions_amount_minor', 'amount_minor >= 100')
 @Check('CHK_subscriptions_currency', "currency = 'UAH'")
 @Check('CHK_subscriptions_anchor_day', 'anchor_day >= 1 AND anchor_day <= 31')
@@ -25,6 +26,14 @@ export class Subscription {
 
   @Column({ name: 'payment_method_id', type: 'uuid', nullable: true })
   paymentMethodId: string | null;
+
+  @Column({
+    name: 'provider_subscription_id',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+  })
+  providerSubscriptionId: string | null;
 
   @Column({ type: 'enum', enum: SubscriptionStatus })
   status: SubscriptionStatus;

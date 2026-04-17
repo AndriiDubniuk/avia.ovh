@@ -16,6 +16,8 @@ describe('MonobankClientService', () => {
         if (key === 'MONOBANK_TOKEN') return 'token';
         if (key === 'MONOBANK_API_BASE_URL') return 'https://api.monobank.ua';
         if (key === 'MONOBANK_MODE') return 'mock';
+        if (key === 'MONOBANK_WEBHOOK_URL')
+          return 'https://billing.example.com/v1/billing/webhooks/monobank';
         return undefined;
       }),
     } as unknown as jest.Mocked<ConfigService>;
@@ -99,6 +101,43 @@ describe('MonobankClientService', () => {
 
     expect(result.status).toBe('success');
     expect(result.providerPaymentId).toBe('pay-1');
+    expect(httpService.post).toHaveBeenCalledWith(
+      'https://api.monobank.ua/api/merchant/invoice/create',
+      expect.objectContaining({
+        webHookUrl:
+          'https://billing.example.com/v1/billing/webhooks/monobank',
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('injects webHookUrl into invoice create payload', async () => {
+    httpService.post.mockReturnValue(
+      of({
+        data: {
+          invoiceId: 'inv-2',
+          pageUrl: 'https://pay.monobank.ua/invoice/inv-2',
+          finalDate: new Date().toISOString(),
+        },
+      } as never),
+    );
+
+    await service.createInvoice({
+      amountMinor: 29900,
+      currency: 'UAH',
+      reference: 'sub-2',
+      redirectUrl: 'https://billing.example.com/result?checkoutId=chk-2',
+      tokenizationRequested: true,
+    });
+
+    expect(httpService.post).toHaveBeenCalledWith(
+      'https://api.monobank.ua/api/merchant/invoice/create',
+      expect.objectContaining({
+        webHookUrl:
+          'https://billing.example.com/v1/billing/webhooks/monobank',
+      }),
+      expect.any(Object),
+    );
   });
 
   it('maps recurring charge failure response', async () => {
@@ -129,6 +168,8 @@ describe('MonobankClientService', () => {
       if (key === 'MONOBANK_MODE') return 'real';
       if (key === 'MONOBANK_TOKEN') return '';
       if (key === 'MONOBANK_API_BASE_URL') return 'https://api.monobank.ua';
+      if (key === 'MONOBANK_WEBHOOK_URL')
+        return 'https://billing.example.com/v1/billing/webhooks/monobank';
       return undefined;
     });
 
@@ -150,5 +191,27 @@ describe('MonobankClientService', () => {
         tokenizationRequested: true,
       }),
     ).rejects.toThrow('MONOBANK_TOKEN is required for MONOBANK_MODE=real.');
+  });
+
+  it('throws clear error in real mode when webhook url is missing', async () => {
+    configService.get.mockImplementation((key: string) => {
+      if (key === 'MONOBANK_MODE') return 'real';
+      if (key === 'MONOBANK_TOKEN') return 'real-token';
+      if (key === 'MONOBANK_API_BASE_URL') return 'https://api.monobank.ua';
+      if (key === 'MONOBANK_WEBHOOK_URL') return '';
+      return undefined;
+    });
+
+    await expect(
+      service.createInvoice({
+        amountMinor: 29900,
+        currency: 'UAH',
+        reference: 'sub-1',
+        redirectUrl: 'https://example.com/return',
+        tokenizationRequested: true,
+      }),
+    ).rejects.toThrow(
+      'MONOBANK_WEBHOOK_URL is required for MONOBANK_MODE=real.',
+    );
   });
 });

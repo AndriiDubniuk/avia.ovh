@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CreatePersonalBillingLinkDto } from './dto/create-personal-billing-link.dto';
+import { PersonalLinkCheckoutDto } from './dto/personal-link-checkout.dto';
 import { PersonalBillingLinksService } from './personal-billing-links.service';
 
 @Controller('billing/personal-links')
@@ -14,8 +15,11 @@ export class PersonalBillingLinksController {
   }
 
   @Post(':token/checkout')
-  async createCheckout(@Param('token') token: string) {
-    return this.personalBillingLinksService.createCheckoutByToken(token);
+  async createCheckout(
+    @Param('token') token: string,
+    @Body() dto: PersonalLinkCheckoutDto,
+  ) {
+    return this.personalBillingLinksService.createCheckoutByToken(token, dto);
   }
 }
 

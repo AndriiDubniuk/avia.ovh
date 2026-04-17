@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BILLING_CURRENCY } from '../billing.constants';
 import { ClientsService } from '../clients/clients.service';
+import { MonobankAcquiringService } from '../monobank-acquiring.service';
 import { PaymentAttempt } from '../payments/entities/payment-attempt.entity';
 import { PaymentAttemptStatus } from '../payments/enums/payment-attempt-status.enum';
 import { PaymentAttemptType } from '../payments/enums/payment-attempt-type.enum';
@@ -23,6 +24,7 @@ export class SubscriptionsService {
     @InjectRepository(PaymentAttempt)
     private readonly paymentAttemptsRepository: Repository<PaymentAttempt>,
     private readonly clientsService: ClientsService,
+    private readonly monobankAcquiringService: MonobankAcquiringService,
   ) {}
 
   async createSubscription(
@@ -41,6 +43,7 @@ export class SubscriptionsService {
     const subscription = this.subscriptionsRepository.create({
       clientId: client.id,
       paymentMethodId: null,
+      providerSubscriptionId: null,
       status: SubscriptionStatus.PendingInitialPayment,
       amountMinor: dto.plan.amount_minor,
       currency: BILLING_CURRENCY,
@@ -95,6 +98,17 @@ export class SubscriptionsService {
     assertCanCancelSubscription(subscription.status);
 
     const now = new Date();
+
+    if (subscription.providerSubscriptionId) {
+      try {
+        await this.monobankAcquiringService.cancelSubscription(
+          subscription.providerSubscriptionId,
+        );
+      } catch {
+        // Local cancel remains source of truth; provider cancel errors are non-fatal.
+      }
+    }
+
     await this.subscriptionsRepository.update(
       { id: subscription.id },
       {

@@ -15,14 +15,16 @@ export class CreatePersonalBillingLinkDto {
   @MaxLength(100)
   planCode: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(160)
-  customerName: string;
+  customerName?: string;
 
+  @IsOptional()
   @IsEmail()
   @MaxLength(320)
-  customerEmail: string;
+  customerEmail?: string;
 
   @IsOptional()
   @IsString()

@@ -227,7 +227,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
         </header>
 
         <section className="grid flex-1 gap-6 py-10">
-          <div className="rounded-[2rem] border border-black/10 bg-[#151515] p-7 text-white shadow-[0_28px_90px_-60px_rgba(0,0,0,0.65)]">
+          <div className="rounded-[2rem] border border-black/10 bg-[#151515] p-6 text-white shadow-[0_28px_90px_-60px_rgba(0,0,0,0.65)] sm:p-7">
             <p className="text-sm uppercase tracking-[0.24em] text-white/45">Поточний стан</p>
             <h2 className="display mt-4 text-4xl font-semibold">
               {checkout?.planName ?? "Завантажуємо checkout..."}
@@ -265,7 +265,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
                       className="rounded-[1.25rem] border border-black/8 bg-black/[0.03] px-4 py-4"
                     >
                       <p className="text-xs uppercase tracking-[0.2em] text-black/45">{label}</p>
-                      <p className="mt-2 text-base font-medium">{value}</p>
+                      <p className="mt-2 break-words text-base font-medium">{value}</p>
                     </div>
                   ))}
                 </div>
@@ -298,7 +298,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
                   {statusUi.ctaHref !== "#refresh" ? (
                     <Link
                       href={statusUi.ctaHref}
-                      className={`rounded-full px-6 py-4 text-sm font-semibold ${
+                      className={`w-full rounded-full px-6 py-4 text-center text-sm font-semibold sm:w-auto ${
                         statusUi.ctaVariant === "primary"
                           ? "bg-black text-white hover:-translate-y-0.5"
                           : "border border-black/10 bg-white hover:-translate-y-0.5"
@@ -312,7 +312,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
                     type="button"
                     onClick={onRefresh}
                     disabled={isRefreshing}
-                    className="rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5 disabled:opacity-60"
+                    className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5 disabled:opacity-60 sm:w-auto"
                   >
                     {isRefreshing ? "Оновлюємо..." : "Оновити статус"}
                   </button>
@@ -322,7 +322,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
                       type="button"
                       onClick={onCancel}
                       disabled={isCancelling}
-                      className="rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/45"
+                      className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/45 sm:w-auto"
                     >
                       {isCancelling
                         ? "Скасовуємо..."
@@ -335,7 +335,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
                   {checkout.subscriptionId ? (
                     <Link
                       href={`/subscriptions/${encodeURIComponent(checkout.subscriptionId)}`}
-                      className="rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5"
+                      className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-center text-sm font-semibold hover:-translate-y-0.5 sm:w-auto"
                     >
                       Перейти до підписки
                     </Link>
@@ -349,4 +349,3 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
     </main>
   );
 }
-

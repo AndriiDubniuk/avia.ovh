@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import { Client } from '../clients/entities/client.entity';
+import { BillingEmailService } from '../emails/billing-email.service';
 import { MonobankClientService } from '../monobank/monobank-client.service';
 import { PaymentMethodsService } from '../payment-methods/payment-methods.service';
 import { PaymentsService } from '../payments/payments.service';
@@ -37,6 +39,7 @@ export class RecurringBillingService {
     private readonly paymentsService: PaymentsService,
     private readonly paymentMethodsService: PaymentMethodsService,
     private readonly monobankClientService: MonobankClientService,
+    private readonly billingEmailService: BillingEmailService,
   ) {}
 
   async runDueCharges(limit = 50) {
@@ -50,6 +53,7 @@ export class RecurringBillingService {
       }
 
       results.push(result);
+      await this.trySendRecurringOutcomeEmail(result);
       processed += 1;
     }
 
@@ -72,6 +76,50 @@ export class RecurringBillingService {
       ).length,
       items: results,
     };
+  }
+
+  private async trySendRecurringOutcomeEmail(result: DueChargeProcessResult) {
+    const shouldSendSuccess = result.outcome === 'charged';
+    const shouldSendFailure =
+      result.outcome === 'failed_scheduled_retry' ||
+      result.outcome === 'suspended';
+
+    if (!result.paymentAttemptId || (!shouldSendSuccess && !shouldSendFailure)) {
+      return;
+    }
+
+    try {
+      const [paymentAttempt, subscription] = await Promise.all([
+        this.dataSource.getRepository(PaymentAttempt).findOne({
+          where: { id: result.paymentAttemptId },
+        }),
+        this.dataSource.getRepository(Subscription).findOne({
+          where: { id: result.subscriptionId },
+        }),
+      ]);
+
+      if (!paymentAttempt || !subscription) {
+        return;
+      }
+
+      const client = await this.dataSource.getRepository(Client).findOne({
+        where: { id: subscription.clientId },
+      });
+
+      if (!client) {
+        return;
+      }
+
+      await this.billingEmailService.sendPaymentOutcomeEmails({
+        kind: shouldSendSuccess ? 'recurring_success' : 'recurring_failure',
+        eventKey: `recurring:${paymentAttempt.id}:${shouldSendSuccess ? 'success' : 'failure'}`,
+        subscription,
+        paymentAttempt,
+        client,
+      });
+    } catch {
+      // Email delivery issues must not break recurring billing execution.
+    }
   }
 
   private async processOneDueSubscription(): Promise<DueChargeProcessResult | null> {

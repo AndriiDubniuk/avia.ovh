@@ -3,11 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
-import {
-  MonobankClientService,
-  MonobankCreateInvoiceArgs,
-} from '../monobank/monobank-client.service';
+import { MonobankAcquiringService } from '../monobank-acquiring.service';
 import { PaymentsService } from '../payments/payments.service';
+import { SubscriptionInterval } from '../subscriptions/enums/subscription-interval.enum';
 import { SubscriptionStatus } from '../subscriptions/enums/subscription-status.enum';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
@@ -20,7 +18,7 @@ export class CheckoutService {
     @InjectRepository(CheckoutSession)
     private readonly checkoutSessionsRepository: Repository<CheckoutSession>,
     private readonly subscriptionsService: SubscriptionsService,
-    private readonly monobankClientService: MonobankClientService,
+    private readonly monobankAcquiringService: MonobankAcquiringService,
     private readonly paymentsService: PaymentsService,
     private readonly configService: ConfigService,
   ) {}
@@ -58,6 +56,7 @@ export class CheckoutService {
       subscriptionId: subscription.id,
       clientId: subscription.clientId,
       providerInvoiceId: providerResult.providerInvoiceId,
+      providerSubscriptionId: providerResult.providerSubscriptionId ?? null,
       checkoutUrl: providerResult.checkoutUrl,
       status: CheckoutStatus.Created,
       tokenizationRequested: dto.tokenization_requested,
@@ -108,12 +107,15 @@ export class CheckoutService {
     const mode = (this.configService.get<string>('MONOBANK_MODE') ?? 'mock')
       .trim()
       .toLowerCase();
+    const webhookUrl =
+      this.configService.get<string>('MONOBANK_WEBHOOK_URL') ?? '';
 
     if (mode === 'mock') {
       const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
       return {
         providerInvoiceId: `mock-invoice-${args.checkoutSessionId}`,
+        providerSubscriptionId: `mock-subscription-${args.checkoutSessionId}`,
         checkoutUrl: args.redirectUrl,
         expiresAt,
         providerPayloadJson: {
@@ -124,14 +126,31 @@ export class CheckoutService {
       };
     }
 
-    const invoicePayload: MonobankCreateInvoiceArgs = {
-      amountMinor: args.amountMinor,
-      currency: args.currency,
-      redirectUrl: args.redirectUrl,
-      reference: args.subscriptionId,
-      tokenizationRequested: args.tokenizationRequested,
-    };
+    const subscription = await this.subscriptionsService.findByIdOrFail(
+      args.subscriptionId,
+    );
 
-    return this.monobankClientService.createInvoice(invoicePayload);
+    const created = await this.monobankAcquiringService.createSubscription({
+      amount: args.amountMinor,
+      ccy: 980,
+      redirectUrl: args.redirectUrl,
+      webHookUrls: {
+        chargeUrl: webhookUrl,
+        statusUrl: webhookUrl,
+      },
+      interval:
+        subscription.interval === SubscriptionInterval.Monthly
+          ? '1m'
+          : '1y',
+      validity: 3650,
+    });
+
+    return {
+      providerInvoiceId: `mono-subscription:${created.subscriptionId}`,
+      providerSubscriptionId: created.subscriptionId,
+      checkoutUrl: created.pageUrl,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      providerPayloadJson: created as Record<string, unknown>,
+    };
   }
 }

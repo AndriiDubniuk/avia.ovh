@@ -9,6 +9,7 @@ import { Request, Response } from 'express';
 import { createHash, randomBytes } from 'crypto';
 import { In, IsNull, MoreThan, Repository } from 'typeorm';
 import { Client } from '../clients/entities/client.entity';
+import { BillingEmailService } from '../emails/billing-email.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import {
@@ -34,6 +35,7 @@ export class PortalService {
     @InjectRepository(Subscription)
     private readonly subscriptionsRepository: Repository<Subscription>,
     private readonly subscriptionsService: SubscriptionsService,
+    private readonly billingEmailService: BillingEmailService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -62,8 +64,10 @@ export class PortalService {
       'http://localhost:3002';
     const magicLink = `${billingPublicUrl}/portal/verify?token=${magicToken}`;
 
-    // Minimal delivery placeholder for now: can be replaced with real email provider later.
-    console.info(`[portal-magic-link] to=${email} link=${magicLink}`);
+    await this.billingEmailService.sendPortalMagicLinkEmail({
+      to: email,
+      magicLink,
+    });
 
     return {
       ok: true,

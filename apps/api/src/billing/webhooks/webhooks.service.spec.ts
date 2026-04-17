@@ -4,6 +4,7 @@ import { WebhooksService } from './webhooks.service';
 import { MonobankClientService } from '../monobank/monobank-client.service';
 import { WebhookEventsService } from './webhook-events.service';
 import { PaymentMethodsService } from '../payment-methods/payment-methods.service';
+import { BillingEmailService } from '../emails/billing-email.service';
 import { SubscriptionStatus } from '../subscriptions/enums/subscription-status.enum';
 import { SubscriptionInterval } from '../subscriptions/enums/subscription-interval.enum';
 
@@ -12,6 +13,7 @@ describe('WebhooksService', () => {
   let monobankClientService: jest.Mocked<MonobankClientService>;
   let webhookEventsService: jest.Mocked<WebhookEventsService>;
   let paymentMethodsService: jest.Mocked<PaymentMethodsService>;
+  let billingEmailService: jest.Mocked<BillingEmailService>;
   let dataSource: jest.Mocked<DataSource>;
 
   beforeEach(() => {
@@ -29,6 +31,9 @@ describe('WebhooksService', () => {
     paymentMethodsService = {
       upsertDefaultMonobankToken: jest.fn(),
     } as unknown as jest.Mocked<PaymentMethodsService>;
+    billingEmailService = {
+      sendPaymentOutcomeEmails: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<BillingEmailService>;
 
     dataSource = {
       transaction: jest.fn(),
@@ -38,6 +43,7 @@ describe('WebhooksService', () => {
       monobankClientService,
       webhookEventsService,
       paymentMethodsService,
+      billingEmailService,
       dataSource,
     );
   });
@@ -100,11 +106,19 @@ describe('WebhooksService', () => {
       findOne: jest.fn().mockResolvedValue({ id: 'pay-1' }),
       update: jest.fn(),
     };
+    const clientRepo = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'client-1',
+        name: 'Test Client',
+        email: 'client@example.com',
+      }),
+    };
 
     const manager = {
       getRepository: jest.fn((entity: { name?: string }) => {
         if (entity.name === 'CheckoutSession') return checkoutRepo;
         if (entity.name === 'Subscription') return subscriptionRepo;
+        if (entity.name === 'Client') return clientRepo;
         return paymentRepo;
       }),
     };
@@ -164,11 +178,19 @@ describe('WebhooksService', () => {
       findOne: jest.fn().mockResolvedValue({ id: 'pay-1' }),
       update: jest.fn(),
     };
+    const clientRepo = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'client-1',
+        name: 'Test Client',
+        email: 'client@example.com',
+      }),
+    };
 
     const manager = {
       getRepository: jest.fn((entity: { name?: string }) => {
         if (entity.name === 'CheckoutSession') return checkoutRepo;
         if (entity.name === 'Subscription') return subscriptionRepo;
+        if (entity.name === 'Client') return clientRepo;
         return paymentRepo;
       }),
     };
@@ -223,11 +245,19 @@ describe('WebhooksService', () => {
       findOne: jest.fn().mockResolvedValue({ id: 'pay-1' }),
       update: jest.fn(),
     };
+    const clientRepo = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'client-1',
+        name: 'Test Client',
+        email: 'client@example.com',
+      }),
+    };
 
     const manager = {
       getRepository: jest.fn((entity: { name?: string }) => {
         if (entity.name === 'CheckoutSession') return checkoutRepo;
         if (entity.name === 'Subscription') return subscriptionRepo;
+        if (entity.name === 'Client') return clientRepo;
         return paymentRepo;
       }),
     };
@@ -304,11 +334,19 @@ describe('WebhooksService', () => {
       findOne: jest.fn().mockResolvedValue({ id: 'pay-1' }),
       update: jest.fn(),
     };
+    const clientRepo = {
+      findOne: jest.fn().mockResolvedValue({
+        id: 'client-1',
+        name: 'Test Client',
+        email: 'client@example.com',
+      }),
+    };
 
     const manager = {
       getRepository: jest.fn((entity: { name?: string }) => {
         if (entity.name === 'CheckoutSession') return checkoutRepo;
         if (entity.name === 'Subscription') return subscriptionRepo;
+        if (entity.name === 'Client') return clientRepo;
         return paymentRepo;
       }),
     };

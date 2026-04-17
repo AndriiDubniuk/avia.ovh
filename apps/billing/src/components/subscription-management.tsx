@@ -189,7 +189,7 @@ export function SubscriptionManagement({
         <section className="grid flex-1 gap-6 py-10">
           <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 shadow-[0_24px_70px_-55px_rgba(0,0,0,0.45)]">
             <p className="text-sm uppercase tracking-[0.22em] text-black/45">Subscription ID</p>
-            <p className="mt-2 font-mono text-sm">{subscriptionId}</p>
+            <p className="mt-2 break-all font-mono text-sm">{subscriptionId}</p>
           </div>
 
           {feedback ? (
@@ -252,7 +252,7 @@ export function SubscriptionManagement({
                   <button
                     type="button"
                     onClick={() => void loadSubscription()}
-                    className="rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5"
+                    className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5 sm:w-auto"
                   >
                     Оновити
                   </button>
@@ -262,7 +262,7 @@ export function SubscriptionManagement({
                       type="button"
                       onClick={onCancel}
                       disabled={isCancelling}
-                      className="rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:opacity-60"
+                      className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:opacity-60 sm:w-auto"
                     >
                       {isCancelling ? "Скасовуємо..." : "Скасувати автопродовження"}
                     </button>

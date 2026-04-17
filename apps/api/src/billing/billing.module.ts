@@ -16,7 +16,6 @@ import {
 } from './personal-links/personal-billing-links.controller';
 import { PersonalBillingLinksService } from './personal-links/personal-billing-links.service';
 import { PortalModule } from './portal/portal.module';
-import { RecurringBillingModule } from './recurring/recurring-billing.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 
@@ -32,7 +31,6 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     MonobankModule,
     PaymentMethodsModule,
     WebhooksModule,
-    RecurringBillingModule,
   ],
   controllers: [
     BillingController,

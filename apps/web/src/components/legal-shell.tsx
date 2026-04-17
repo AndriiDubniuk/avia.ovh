@@ -25,9 +25,9 @@ export function LegalShell({
   return (
     <div className="shell grain flex-1">
       <div className="mx-auto w-full max-w-5xl px-6 py-8 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <LogoMark />
-          <Button asChild variant="outline" className="rounded-full">
+          <Button asChild variant="outline" className="w-full rounded-full sm:w-auto">
             <Link href="/">На головну</Link>
           </Button>
         </div>
@@ -39,7 +39,7 @@ export function LegalShell({
           <h1 className="section-title mt-4 text-4xl font-semibold text-foreground sm:text-5xl">
             {title}
           </h1>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">
+          <p className="mt-5 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
             {description}
           </p>
         </div>

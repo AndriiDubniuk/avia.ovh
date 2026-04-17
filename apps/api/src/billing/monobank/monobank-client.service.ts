@@ -56,6 +56,7 @@ export class MonobankClientService {
 
   async createInvoice(args: MonobankCreateInvoiceArgs) {
     const token = this.getRequiredRealModeToken();
+    const webHookUrl = this.getRequiredRealModeWebhookUrl();
     const baseUrl = this.configService.get<string>('MONOBANK_API_BASE_URL');
 
     if (!token || !baseUrl) {
@@ -73,6 +74,7 @@ export class MonobankClientService {
         destination: 'Recurring subscription payment',
         comment: `subscription:${args.reference}`,
       },
+      webHookUrl,
       saveCardData: {
         saveCard: args.tokenizationRequested,
       },
@@ -118,6 +120,7 @@ export class MonobankClientService {
     args: MonobankRecurringChargeArgs,
   ): Promise<MonobankRecurringChargeResult> {
     const token = this.getRequiredRealModeToken();
+    const webHookUrl = this.getRequiredRealModeWebhookUrl();
     const baseUrl = this.configService.get<string>('MONOBANK_API_BASE_URL');
 
     if (!token || !baseUrl) {
@@ -134,6 +137,7 @@ export class MonobankClientService {
         destination: 'Recurring subscription payment',
         comment: `subscription:${args.reference}`,
       },
+      webHookUrl,
       walletData: {
         cardToken: args.cardToken,
       },
@@ -274,5 +278,37 @@ export class MonobankClientService {
     }
 
     return token;
+  }
+
+  private getRequiredRealModeWebhookUrl() {
+    const mode = (this.configService.get<string>('MONOBANK_MODE') ?? 'mock')
+      .trim()
+      .toLowerCase();
+    const webHookUrl =
+      this.configService.get<string>('MONOBANK_WEBHOOK_URL') ?? '';
+    const normalized = webHookUrl.trim();
+
+    if (mode !== 'real') {
+      return normalized;
+    }
+
+    if (!normalized) {
+      throw new ServiceUnavailableException(
+        'MONOBANK_WEBHOOK_URL is required for MONOBANK_MODE=real.',
+      );
+    }
+
+    try {
+      const parsed = new URL(normalized);
+      if (!parsed.protocol || !parsed.host) {
+        throw new Error('Invalid URL');
+      }
+    } catch {
+      throw new ServiceUnavailableException(
+        'MONOBANK_WEBHOOK_URL must be a valid URL in MONOBANK_MODE=real.',
+      );
+    }
+
+    return normalized;
   }
 }

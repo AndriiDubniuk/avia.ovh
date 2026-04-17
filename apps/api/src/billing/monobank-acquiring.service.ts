@@ -149,9 +149,17 @@ export class MonobankAcquiringService {
 
     if (!response.ok) {
       const errorPayload = data as MonobankErrorResponse | null;
+      const providerErrorText = errorPayload?.errText?.trim() ?? '';
+      const normalizedErrorText = providerErrorText.toLowerCase();
+      console.log(normalizedErrorText)
+      if (normalizedErrorText.includes('h2h not allowed')) {
+        throw new BadGatewayException(
+          'Monobank H2H subscription API is not allowed for current acquiring token/merchant. Enable H2H subscription endpoints for this merchant and use a valid MONOBANK_ACQUIRING_TOKEN.',
+        );
+      }
 
       throw new BadGatewayException(
-        errorPayload?.errText ??
+        providerErrorText ||
           'monobank повернув помилку під час обробки запиту.',
       );
     }

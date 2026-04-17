@@ -29,6 +29,17 @@ export function getInvoiceId(payload: Record<string, unknown>): string | null {
   return asString(payload.invoiceId) ?? asString(payload.invoice_id) ?? null;
 }
 
+export function getSubscriptionId(
+  payload: Record<string, unknown>,
+): string | null {
+  return (
+    asString(payload.subscriptionId) ??
+    asString(payload.subscription_id) ??
+    asString(payload.walletId) ??
+    null
+  );
+}
+
 export function getProviderPaymentId(
   payload: Record<string, unknown>,
 ): string | null {

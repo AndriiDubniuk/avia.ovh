@@ -7,12 +7,14 @@ import { WebhooksService } from './webhooks.service';
 import { WebhookEventsService } from './webhook-events.service';
 import { MonobankModule } from '../monobank/monobank.module';
 import { PaymentMethodsModule } from '../payment-methods/payment-methods.module';
+import { BillingEmailsModule } from '../emails/billing-emails.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([WebhookEvent]),
     MonobankModule,
     PaymentMethodsModule,
+    BillingEmailsModule,
   ],
   controllers: [WebhooksController, InternalWebhooksController],
   providers: [WebhooksService, WebhookEventsService],

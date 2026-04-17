@@ -72,15 +72,65 @@ function isPlaceholderToken(value: string) {
   return placeholders.has(normalized);
 }
 
+function parseRequiredUrl(value: string, name: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    throw new Error(`Environment variable ${name} must be a valid URL.`);
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (!parsed.protocol || !parsed.host) {
+      throw new Error('Invalid URL.');
+    }
+  } catch {
+    throw new Error(`Environment variable ${name} must be a valid URL.`);
+  }
+}
+
 export function validateEnv(config: RawEnv) {
   const appEnv = parseString(config.APP_ENV, 'local');
   const monobankMode = parseMonobankMode(config.MONOBANK_MODE);
   const monobankToken = parseString(config.MONOBANK_TOKEN, '');
+  const monobankWebhookUrl = parseString(config.MONOBANK_WEBHOOK_URL, '');
+  const monobankAcquiringToken = parseString(
+    config.MONOBANK_ACQUIRING_TOKEN,
+    '',
+  );
 
   if (monobankMode === 'real' && isPlaceholderToken(monobankToken)) {
     throw new Error(
       'MONOBANK_TOKEN is required in MONOBANK_MODE=real and cannot be a placeholder value.',
     );
+  }
+
+  if (monobankMode === 'real') {
+    parseRequiredUrl(monobankWebhookUrl, 'MONOBANK_WEBHOOK_URL');
+    if (isPlaceholderToken(monobankAcquiringToken)) {
+      throw new Error(
+        'MONOBANK_ACQUIRING_TOKEN is required in MONOBANK_MODE=real and cannot be a placeholder value.',
+      );
+    }
+  }
+
+  const resendApiKey = parseString(config.RESEND_API_KEY, '');
+  const resendFromEmail = parseString(config.RESEND_FROM_EMAIL, '');
+  const billingNotificationToEmail = parseString(
+    config.BILLING_NOTIFICATION_TO_EMAIL,
+    '',
+  );
+
+  if (appEnv !== 'test') {
+    if (!resendApiKey.trim()) {
+      throw new Error('RESEND_API_KEY is required.');
+    }
+    if (!resendFromEmail.trim()) {
+      throw new Error('RESEND_FROM_EMAIL is required.');
+    }
+    if (!billingNotificationToEmail.trim()) {
+      throw new Error('BILLING_NOTIFICATION_TO_EMAIL is required.');
+    }
   }
 
   return {
@@ -106,6 +156,8 @@ export function validateEnv(config: RawEnv) {
     ),
     MONOBANK_MODE: monobankMode,
     MONOBANK_TOKEN: monobankToken,
+    MONOBANK_WEBHOOK_URL: monobankWebhookUrl,
+    MONOBANK_ACQUIRING_TOKEN: monobankAcquiringToken,
     TOKEN_ENCRYPTION_KEY: parseString(config.TOKEN_ENCRYPTION_KEY, ''),
     IDEMPOTENCY_TTL_HOURS: parseNumber(
       config.IDEMPOTENCY_TTL_HOURS,
@@ -145,5 +197,8 @@ export function validateEnv(config: RawEnv) {
       config.BILLING_PORTAL_COOKIE_NAME,
       'billing_portal_session',
     ),
+    RESEND_API_KEY: resendApiKey,
+    RESEND_FROM_EMAIL: resendFromEmail,
+    BILLING_NOTIFICATION_TO_EMAIL: billingNotificationToEmail,
   };
 }

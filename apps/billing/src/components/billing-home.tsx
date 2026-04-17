@@ -138,28 +138,28 @@ export function BillingHome() {
               Оформіть підписку на Avia.
             </h1>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm">
+          <div className="flex w-full flex-wrap gap-3 text-sm md:w-auto">
             <Link
               href={landingUrl}
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
+              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
             >
               Повернутися на avia.ovh
             </Link>
             <Link
               href={`${landingUrl}/offer`}
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
+              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
             >
               Оферта
             </Link>
             <Link
               href={`${landingUrl}/privacy`}
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
+              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
             >
               Конфіденційність
             </Link>
             <Link
               href="/portal"
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
+              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
             >
               Мої підписки
             </Link>
@@ -239,7 +239,7 @@ export function BillingHome() {
                               {plan.description}
                             </p>
                           </div>
-                          <div className="rounded-[1.4rem] border border-black/10 bg-black px-5 py-4 text-right text-white">
+                          <div className="w-full rounded-[1.4rem] border border-black/10 bg-black px-5 py-4 text-left text-white sm:w-auto sm:text-right">
                             <p className="text-xs uppercase tracking-[0.24em] text-white/50">
                               Ціна
                             </p>
@@ -280,14 +280,14 @@ export function BillingHome() {
 
             {selectedPlan ? (
               <div className="mt-6 rounded-[1.7rem] border border-black/10 bg-white/80 p-5">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <p className="text-sm uppercase tracking-[0.22em] text-black/45">
                       Обрано
                     </p>
                     <h3 className="mt-2 text-2xl font-semibold">{selectedPlan.name}</h3>
                   </div>
-                  <p className="text-lg font-semibold">{selectedPlan.priceLabel}</p>
+                  <p className="break-words text-lg font-semibold">{selectedPlan.priceLabel}</p>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-black/68">
                   {selectedPlan.note}
@@ -355,7 +355,7 @@ export function BillingHome() {
               <button
                 type="submit"
                 disabled={isSubmitting || !selectedPlanCode}
-                className="rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/50"
+                className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/50 sm:w-auto"
               >
                 {isSubmitting
                   ? "Створюємо checkout..."

@@ -15,6 +15,7 @@ COPY --from=deps /app/apps/billing/node_modules ./apps/billing/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/billing ./apps/billing
 WORKDIR /app/apps/billing
+RUN mkdir -p /app/apps/billing/public
 RUN pnpm build
 
 FROM node:22-alpine AS runner

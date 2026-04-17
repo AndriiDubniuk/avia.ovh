@@ -80,6 +80,7 @@ jobs:
           cat > .env.production <<EOF
           APP_DOMAIN=avia.ovh
           BILLING_DOMAIN=billing.avia.ovh
+          APP_ENV=production
           DB_PORT=5432
           DB_USER=avia
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
@@ -97,15 +98,18 @@ jobs:
           NEXT_PUBLIC_SITE_URL=https://avia.ovh
           NEXT_PUBLIC_API_BASE_URL=/api
           NEXT_PUBLIC_BILLING_URL=https://billing.avia.ovh
+          NEXT_PUBLIC_LANDING_URL=https://avia.ovh
           EOF
 
           cat > apps/billing/.env.production <<EOF
           NEXT_PUBLIC_SITE_URL=https://billing.avia.ovh
           NEXT_PUBLIC_API_BASE_URL=/api
           NEXT_PUBLIC_LANDING_URL=https://avia.ovh
+          BILLING_PRIVATE_MODE=true
           EOF
 
           cat > apps/api/.env.production <<EOF
+          APP_ENV=production
           PORT=3001
           FRONTEND_ORIGIN=https://avia.ovh,https://www.avia.ovh,https://billing.avia.ovh
           DB_HOST=postgres
@@ -117,8 +121,16 @@ jobs:
           TYPEORM_SYNCHRONIZE=true
           BILLING_PUBLIC_URL=https://billing.avia.ovh
           BILLING_PUBLIC_API_URL=https://billing.avia.ovh/api
+          BILLING_PRIVATE_MODE=true
           MONOBANK_API_BASE_URL=https://api.monobank.ua
+          MONOBANK_MODE=real
+          MONOBANK_WEBHOOK_URL=https://billing.avia.ovh/v1/billing/webhooks/monobank
+          MONOBANK_TOKEN=${{ secrets.MONOBANK_TOKEN }}
           MONOBANK_ACQUIRING_TOKEN=${{ secrets.MONOBANK_ACQUIRING_TOKEN }}
+          RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
+          BILLING_NOTIFICATION_TO_EMAIL=${{ secrets.BILLING_NOTIFICATION_TO_EMAIL }}
+          TOKEN_ENCRYPTION_KEY=${{ secrets.TOKEN_ENCRYPTION_KEY }}
           EOF
 
       - name: Prepare SSH
@@ -160,9 +172,10 @@ jobs:
           docker compose --env-file .env.production -f docker-compose.deploy.yml config >/dev/null
           docker compose --env-file .env.production -f docker-compose.deploy.yml pull web api billing
           docker compose --env-file .env.production -f docker-compose.deploy.yml up -d postgres
-          docker compose --env-file .env.production -f docker-compose.deploy.yml up -d web api billing
+          docker compose --env-file .env.production -f docker-compose.deploy.yml up -d api
+          docker compose --env-file .env.production -f docker-compose.deploy.yml up -d web billing
 
-          if ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/health >/dev/null || ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/api/health >/dev/null || ! curl -fsS -H "Host: billing.avia.ovh" http://127.0.0.1/health >/dev/null; then
+          if ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/health >/dev/null || ! curl -fsS -H "Host: avia.ovh" http://127.0.0.1/api/v1/health >/dev/null || ! curl -fsS -H "Host: billing.avia.ovh" http://127.0.0.1/health >/dev/null; then
             if [ -f ".env.production.bak.\${BACKUP_SUFFIX}" ]; then
               cp ".env.production.bak.\${BACKUP_SUFFIX}" .env.production
               docker compose --env-file .env.production -f docker-compose.deploy.yml up -d web api billing

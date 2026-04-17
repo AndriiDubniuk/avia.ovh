@@ -6,5 +6,7 @@ output
 coverage
 apps/web/.next
 apps/api/dist
+apps/billing/.next
 apps/web/node_modules
 apps/api/node_modules
+apps/billing/node_modules

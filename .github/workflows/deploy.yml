@@ -127,6 +127,13 @@ jobs:
           MONOBANK_WEBHOOK_URL=https://billing.avia.ovh/v1/billing/webhooks/monobank
           MONOBANK_TOKEN=${{ secrets.MONOBANK_TOKEN }}
           MONOBANK_ACQUIRING_TOKEN=${{ secrets.MONOBANK_ACQUIRING_TOKEN }}
+          IDEMPOTENCY_TTL_HOURS=72
+          BILLING_PLANS_JSON=${{ secrets.BILLING_PLANS_JSON }}
+          BILLING_PORTAL_MAGIC_TTL_MINUTES=15
+          BILLING_PORTAL_SESSION_TTL_HOURS=24
+          BILLING_PORTAL_COOKIE_NAME=billing_portal_session
+          BILLING_PERSONAL_LINK_BASE_URL=https://billing.avia.ovh/pay
+          BILLING_PERSONAL_LINK_TTL_HOURS=72
           RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
           BILLING_NOTIFICATION_TO_EMAIL=${{ secrets.BILLING_NOTIFICATION_TO_EMAIL }}

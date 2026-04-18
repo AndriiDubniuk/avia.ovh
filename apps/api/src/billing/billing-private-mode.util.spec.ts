@@ -23,4 +23,12 @@ describe('billing private mode util', () => {
       ForbiddenException,
     );
   });
+
+  it('supports boolean env values safely', () => {
+    const configService = {
+      get: jest.fn().mockReturnValue(true),
+    } as unknown as ConfigService;
+
+    expect(isBillingPrivateModeEnabled(configService)).toBe(true);
+  });
 });

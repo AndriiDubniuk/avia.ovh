@@ -22,6 +22,15 @@ type SubscriptionSnapshot = {
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
 
+function createIdempotencyKey(prefix: string) {
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return `${prefix}-${randomPart}`;
+}
+
 function formatDate(value: string | null) {
   if (!value) {
     return "—";
@@ -138,6 +147,9 @@ export function SubscriptionManagement({
     try {
       const response = await fetch(`${apiBaseUrl}${cancelPath}`, {
         method: "POST",
+        headers: {
+          "Idempotency-Key": createIdempotencyKey(`cancel-${subscriptionId}`),
+        },
         credentials: mode === "portal" ? "include" : "same-origin",
       });
       const data = (await response.json().catch(() => null)) as

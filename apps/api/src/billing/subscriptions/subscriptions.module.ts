@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule } from '../clients/clients.module';
+import { CheckoutSession } from '../checkout/entities/checkout-session.entity';
 import { IdempotencyModule } from '../idempotency/idempotency.module';
 import { MonobankModule } from '../monobank/monobank.module';
 import { PaymentAttempt } from '../payments/entities/payment-attempt.entity';
@@ -10,7 +11,7 @@ import { SubscriptionsController } from './subscriptions.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Subscription, PaymentAttempt]),
+    TypeOrmModule.forFeature([Subscription, PaymentAttempt, CheckoutSession]),
     ClientsModule,
     IdempotencyModule,
     MonobankModule,

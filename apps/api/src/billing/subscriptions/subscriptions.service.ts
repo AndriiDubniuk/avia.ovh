@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BILLING_CURRENCY } from '../billing.constants';
 import { ClientsService } from '../clients/clients.service';
+import { CheckoutSession } from '../checkout/entities/checkout-session.entity';
 import { MonobankAcquiringService } from '../monobank-acquiring.service';
 import { PaymentAttempt } from '../payments/entities/payment-attempt.entity';
 import { PaymentAttemptStatus } from '../payments/enums/payment-attempt-status.enum';
@@ -23,6 +24,8 @@ export class SubscriptionsService {
     private readonly subscriptionsRepository: Repository<Subscription>,
     @InjectRepository(PaymentAttempt)
     private readonly paymentAttemptsRepository: Repository<PaymentAttempt>,
+    @InjectRepository(CheckoutSession)
+    private readonly checkoutSessionsRepository: Repository<CheckoutSession>,
     private readonly clientsService: ClientsService,
     private readonly monobankAcquiringService: MonobankAcquiringService,
   ) {}
@@ -156,6 +159,10 @@ export class SubscriptionsService {
         },
       }),
     ]);
+    const latestCheckout = await this.checkoutSessionsRepository.findOne({
+      where: { subscriptionId: subscription.id },
+      order: { createdAt: 'DESC' },
+    });
 
     return {
       subscription_id: subscription.id,
@@ -171,6 +178,9 @@ export class SubscriptionsService {
       total_paid: totalPaid,
       total_failed: totalFailed,
       retry_count: subscription.retryCount,
+      latest_checkout_url: latestCheckout?.checkoutUrl ?? null,
+      latest_checkout_expires_at:
+        latestCheckout?.expiresAt?.toISOString() ?? null,
     };
   }
 }

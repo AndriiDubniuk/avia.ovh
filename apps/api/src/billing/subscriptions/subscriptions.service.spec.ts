@@ -7,6 +7,7 @@ import { PaymentAttempt } from '../payments/entities/payment-attempt.entity';
 import { ClientsService } from '../clients/clients.service';
 import { UnprocessableEntityException } from '@nestjs/common';
 import { MonobankAcquiringService } from '../monobank-acquiring.service';
+import { CheckoutSession } from '../checkout/entities/checkout-session.entity';
 
 function makeSubscription(status: SubscriptionStatus): Subscription {
   return {
@@ -36,6 +37,7 @@ describe('SubscriptionsService cancellation', () => {
   let service: SubscriptionsService;
   let subscriptionsRepository: jest.Mocked<Repository<Subscription>>;
   let paymentAttemptsRepository: jest.Mocked<Repository<PaymentAttempt>>;
+  let checkoutSessionsRepository: jest.Mocked<Repository<CheckoutSession>>;
   let monobankAcquiringService: jest.Mocked<MonobankAcquiringService>;
 
   beforeEach(() => {
@@ -58,6 +60,9 @@ describe('SubscriptionsService cancellation', () => {
       count: jest.fn().mockResolvedValue(0),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     } as unknown as jest.Mocked<Repository<PaymentAttempt>>;
+    checkoutSessionsRepository = {
+      findOne: jest.fn().mockResolvedValue(null),
+    } as unknown as jest.Mocked<Repository<CheckoutSession>>;
 
     monobankAcquiringService = {
       cancelSubscription: jest.fn().mockResolvedValue(undefined),
@@ -66,6 +71,7 @@ describe('SubscriptionsService cancellation', () => {
     service = new SubscriptionsService(
       subscriptionsRepository,
       paymentAttemptsRepository,
+      checkoutSessionsRepository,
       {} as ClientsService,
       monobankAcquiringService,
     );

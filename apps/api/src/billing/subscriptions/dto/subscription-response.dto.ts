@@ -15,4 +15,6 @@ export class SubscriptionResponseDto {
   total_paid: number;
   total_failed: number;
   retry_count: number;
+  latest_checkout_url: string | null;
+  latest_checkout_expires_at: string | null;
 }

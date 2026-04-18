@@ -17,6 +17,8 @@ type SubscriptionSnapshot = {
   total_paid?: number;
   total_failed?: number;
   retry_count?: number;
+  latest_checkout_url?: string | null;
+  latest_checkout_expires_at?: string | null;
 };
 
 type PaymentAttemptItem = {
@@ -92,8 +94,9 @@ export function SubscriptionManagement({
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isPaymentStarting, setIsPaymentStarting] = useState(false);
+  const [expandedHistoryKind, setExpandedHistoryKind] = useState<"success" | "failed" | null>(null);
   const [paymentAttempts, setPaymentAttempts] = useState<PaymentAttemptItem[]>([]);
 
   const historySummary = useMemo(
@@ -104,8 +107,9 @@ export function SubscriptionManagement({
   const canCancel = Boolean(
     snapshot &&
       snapshot.cancelled_at === null &&
-      ["active", "past_due"].includes(snapshot.status),
+      ["pending_initial_payment", "active", "past_due"].includes(snapshot.status),
   );
+  const canStartPayment = snapshot?.status === "pending_initial_payment";
 
   const subscriptionPath =
     mode === "portal"
@@ -119,6 +123,7 @@ export function SubscriptionManagement({
     mode === "portal"
       ? `/v1/billing/portal/subscriptions/${encodeURIComponent(subscriptionId)}/payment-attempts`
       : `/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}/payment-attempts`;
+  const checkoutSessionPath = `/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}/checkout-session`;
 
   const loadSubscription = useCallback(async () => {
     setIsLoading(true);
@@ -179,6 +184,33 @@ export function SubscriptionManagement({
   }, [mode, paymentAttemptsPath]);
 
   useEffect(() => {
+    if (snapshot?.status === "pending_initial_payment") {
+      void loadPaymentAttempts();
+    }
+  }, [snapshot?.status, loadPaymentAttempts]);
+
+  const successfulAttempts = useMemo(
+    () => paymentAttempts.filter((attempt) => attempt.status === "success"),
+    [paymentAttempts],
+  );
+  const failedAttempts = useMemo(
+    () => paymentAttempts.filter((attempt) => attempt.status === "failed"),
+    [paymentAttempts],
+  );
+
+  const isPendingCheckoutExpired = useMemo(() => {
+    const expiresAt = snapshot?.latest_checkout_expires_at;
+    if (!expiresAt) {
+      return true;
+    }
+    const expiresAtMs = new Date(expiresAt).getTime();
+    if (Number.isNaN(expiresAtMs)) {
+      return true;
+    }
+    return Date.now() >= expiresAtMs;
+  }, [snapshot?.latest_checkout_expires_at]);
+
+  useEffect(() => {
     void loadSubscription();
   }, [loadSubscription]);
 
@@ -220,11 +252,59 @@ export function SubscriptionManagement({
     }
   }
 
-  async function onToggleHistory() {
-    const next = !isHistoryExpanded;
-    setIsHistoryExpanded(next);
+  async function onToggleHistory(kind: "success" | "failed") {
+    const next = expandedHistoryKind === kind ? null : kind;
+    setExpandedHistoryKind(next);
     if (next && paymentAttempts.length === 0) {
       await loadPaymentAttempts();
+    }
+  }
+
+  async function onStartPayment() {
+    if (!canStartPayment) {
+      return;
+    }
+
+    setIsPaymentStarting(true);
+    setFeedback("");
+
+    try {
+      const returnUrl = `${window.location.origin}/result`;
+      if (
+        snapshot?.latest_checkout_url &&
+        !isPendingCheckoutExpired
+      ) {
+        window.location.href = snapshot.latest_checkout_url;
+        return;
+      }
+
+      const response = await fetch(`${apiBaseUrl}${checkoutSessionPath}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": createIdempotencyKey(`checkout-${subscriptionId}`),
+        },
+        body: JSON.stringify({
+          return_url: returnUrl,
+          tokenization_requested: true,
+        }),
+        credentials: "same-origin",
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { checkout_url?: string; message?: string }
+        | null;
+
+      if (!response.ok || !data?.checkout_url) {
+        throw new Error(
+          data?.message ?? "Не вдалося створити checkout-сесію для оплати.",
+        );
+      }
+
+      window.location.href = data.checkout_url;
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Помилка запуску оплати.");
+    } finally {
+      setIsPaymentStarting(false);
     }
   }
 
@@ -299,14 +379,83 @@ export function SubscriptionManagement({
 
                 {historySummary.length > 0 ? (
                   <div className="mt-4 grid gap-3">
-                    {historySummary.map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/75"
-                      >
-                        {item}
+                    <button
+                      type="button"
+                      onClick={() => void onToggleHistory("success")}
+                      className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-left text-sm text-black/75"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span>Успішних списань: {snapshot.total_paid ?? 0}</span>
+                        <span>{expandedHistoryKind === "success" ? "▾" : "▸"}</span>
                       </div>
-                    ))}
+                    </button>
+
+                    {expandedHistoryKind === "success" ? (
+                      <div className="grid gap-3">
+                        {isHistoryLoading ? (
+                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
+                            Завантажуємо операції...
+                          </div>
+                        ) : successfulAttempts.length > 0 ? (
+                          successfulAttempts.map((attempt) => (
+                            <div
+                              key={attempt.payment_attempt_id}
+                              className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/70"
+                            >
+                              <p>{attempt.type} · {attempt.status}</p>
+                              <p>{formatAmount(attempt.amount_minor, attempt.currency)}</p>
+                              <p>Створено: {formatDate(attempt.created_at)}</p>
+                              <p>Завершено: {formatDate(attempt.finalized_at)}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
+                            Успішних операцій ще немає.
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      onClick={() => void onToggleHistory("failed")}
+                      className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-left text-sm text-black/75"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span>Невдалих списань: {snapshot.total_failed ?? 0}</span>
+                        <span>{expandedHistoryKind === "failed" ? "▾" : "▸"}</span>
+                      </div>
+                    </button>
+
+                    {expandedHistoryKind === "failed" ? (
+                      <div className="grid gap-3">
+                        {isHistoryLoading ? (
+                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
+                            Завантажуємо операції...
+                          </div>
+                        ) : failedAttempts.length > 0 ? (
+                          failedAttempts.map((attempt) => (
+                            <div
+                              key={attempt.payment_attempt_id}
+                              className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/70"
+                            >
+                              <p>{attempt.type} · {attempt.status}</p>
+                              <p>{formatAmount(attempt.amount_minor, attempt.currency)}</p>
+                              <p>Створено: {formatDate(attempt.created_at)}</p>
+                              <p>Завершено: {formatDate(attempt.finalized_at)}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
+                            Невдалих операцій немає.
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+
+                    <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/75">
+                      Поточний retry_count: {snapshot.retry_count ?? 0}
+                    </div>
                   </div>
                 ) : (
                   <p className="mt-4 text-sm text-black/60">
@@ -323,13 +472,20 @@ export function SubscriptionManagement({
                     Оновити
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => void onToggleHistory()}
-                    className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5 sm:w-auto"
-                  >
-                    {isHistoryExpanded ? "Сховати операції" : "Показати операції"}
-                  </button>
+                  {canStartPayment ? (
+                    <button
+                      type="button"
+                      onClick={() => void onStartPayment()}
+                      disabled={isPaymentStarting}
+                      className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:opacity-60 sm:w-auto"
+                    >
+                      {isPaymentStarting
+                        ? "Створюємо checkout..."
+                        : isPendingCheckoutExpired
+                          ? "Створити нову оплату"
+                          : "Сплатити зараз"}
+                    </button>
+                  ) : null}
 
                   {canCancel ? (
                     <button
@@ -342,34 +498,6 @@ export function SubscriptionManagement({
                     </button>
                   ) : null}
                 </div>
-
-                {isHistoryExpanded ? (
-                  <div className="mt-5 grid gap-3">
-                    {isHistoryLoading ? (
-                      <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/60">
-                        Завантажуємо операції...
-                      </div>
-                    ) : paymentAttempts.length > 0 ? (
-                      paymentAttempts.map((attempt) => (
-                        <div
-                          key={attempt.payment_attempt_id}
-                          className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/75"
-                        >
-                          <p>
-                            {attempt.type} · {attempt.status}
-                          </p>
-                          <p>{formatAmount(attempt.amount_minor, attempt.currency)}</p>
-                          <p>Створено: {formatDate(attempt.created_at)}</p>
-                          <p>Завершено: {formatDate(attempt.finalized_at)}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/60">
-                        Операцій ще немає.
-                      </div>
-                    )}
-                  </div>
-                ) : null}
               </div>
             </div>
           ) : null}

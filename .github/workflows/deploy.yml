@@ -124,7 +124,7 @@ jobs:
           BILLING_PRIVATE_MODE=true
           MONOBANK_API_BASE_URL=https://api.monobank.ua
           MONOBANK_MODE=real
-          MONOBANK_WEBHOOK_URL=https://billing.avia.ovh/v1/billing/webhooks/monobank
+          MONOBANK_WEBHOOK_URL=https://billing.avia.ovh/api/v1/billing/webhooks/monobank
           MONOBANK_TOKEN=${{ secrets.MONOBANK_TOKEN }}
           MONOBANK_ACQUIRING_TOKEN=${{ secrets.MONOBANK_ACQUIRING_TOKEN }}
           IDEMPOTENCY_TTL_HOURS=72

@@ -19,6 +19,17 @@ type SubscriptionSnapshot = {
   retry_count?: number;
 };
 
+type PaymentAttemptItem = {
+  payment_attempt_id: string;
+  type: string;
+  status: string;
+  amount_minor: number;
+  currency: string;
+  billing_period_key: string;
+  created_at: string;
+  finalized_at: string | null;
+};
+
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
 
@@ -81,6 +92,9 @@ export function SubscriptionManagement({
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [paymentAttempts, setPaymentAttempts] = useState<PaymentAttemptItem[]>([]);
 
   const historySummary = useMemo(
     () => (snapshot ? summarizeHistory(snapshot) : []),
@@ -101,6 +115,10 @@ export function SubscriptionManagement({
     mode === "portal"
       ? `/v1/billing/portal/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`
       : `/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`;
+  const paymentAttemptsPath =
+    mode === "portal"
+      ? `/v1/billing/portal/subscriptions/${encodeURIComponent(subscriptionId)}/payment-attempts`
+      : `/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}/payment-attempts`;
 
   const loadSubscription = useCallback(async () => {
     setIsLoading(true);
@@ -131,6 +149,34 @@ export function SubscriptionManagement({
       setIsLoading(false);
     }
   }, [mode, subscriptionPath]);
+
+  const loadPaymentAttempts = useCallback(async () => {
+    setIsHistoryLoading(true);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}${paymentAttemptsPath}`, {
+        cache: "no-store",
+        credentials: mode === "portal" ? "include" : "same-origin",
+      });
+      const data = (await response.json().catch(() => null)) as
+        | { items?: PaymentAttemptItem[]; message?: string }
+        | null;
+
+      if (!response.ok || !data || !Array.isArray(data.items)) {
+        throw new Error(
+          data && "message" in data && data.message
+            ? data.message
+            : `Не вдалося отримати платіжні операції (${response.status}).`,
+        );
+      }
+
+      setPaymentAttempts(data.items);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Помилка завантаження операцій.");
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  }, [mode, paymentAttemptsPath]);
 
   useEffect(() => {
     void loadSubscription();
@@ -171,6 +217,14 @@ export function SubscriptionManagement({
       setFeedback(error instanceof Error ? error.message : "Помилка скасування.");
     } finally {
       setIsCancelling(false);
+    }
+  }
+
+  async function onToggleHistory() {
+    const next = !isHistoryExpanded;
+    setIsHistoryExpanded(next);
+    if (next && paymentAttempts.length === 0) {
+      await loadPaymentAttempts();
     }
   }
 
@@ -269,6 +323,14 @@ export function SubscriptionManagement({
                     Оновити
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => void onToggleHistory()}
+                    className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5 sm:w-auto"
+                  >
+                    {isHistoryExpanded ? "Сховати операції" : "Показати операції"}
+                  </button>
+
                   {canCancel ? (
                     <button
                       type="button"
@@ -280,6 +342,34 @@ export function SubscriptionManagement({
                     </button>
                   ) : null}
                 </div>
+
+                {isHistoryExpanded ? (
+                  <div className="mt-5 grid gap-3">
+                    {isHistoryLoading ? (
+                      <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/60">
+                        Завантажуємо операції...
+                      </div>
+                    ) : paymentAttempts.length > 0 ? (
+                      paymentAttempts.map((attempt) => (
+                        <div
+                          key={attempt.payment_attempt_id}
+                          className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/75"
+                        >
+                          <p>
+                            {attempt.type} · {attempt.status}
+                          </p>
+                          <p>{formatAmount(attempt.amount_minor, attempt.currency)}</p>
+                          <p>Створено: {formatDate(attempt.created_at)}</p>
+                          <p>Завершено: {formatDate(attempt.finalized_at)}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/60">
+                        Операцій ще немає.
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}

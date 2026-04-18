@@ -10,6 +10,7 @@ import { createHash, randomBytes } from 'crypto';
 import { In, IsNull, MoreThan, Repository } from 'typeorm';
 import { Client } from '../clients/entities/client.entity';
 import { BillingEmailService } from '../emails/billing-email.service';
+import { PaymentsService } from '../payments/payments.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import {
@@ -35,6 +36,7 @@ export class PortalService {
     @InjectRepository(Subscription)
     private readonly subscriptionsRepository: Repository<Subscription>,
     private readonly subscriptionsService: SubscriptionsService,
+    private readonly paymentsService: PaymentsService,
     private readonly billingEmailService: BillingEmailService,
     private readonly configService: ConfigService,
   ) {}
@@ -165,6 +167,28 @@ export class PortalService {
   async getSubscription(request: Request, subscriptionId: string) {
     await this.assertSubscriptionOwnership(request, subscriptionId);
     return this.subscriptionsService.getSubscription(subscriptionId);
+  }
+
+  async listSubscriptionPaymentAttempts(
+    request: Request,
+    subscriptionId: string,
+  ) {
+    await this.assertSubscriptionOwnership(request, subscriptionId);
+    const attempts =
+      await this.paymentsService.listBySubscriptionId(subscriptionId);
+
+    return {
+      items: attempts.map((attempt) => ({
+        payment_attempt_id: attempt.id,
+        type: attempt.type,
+        status: attempt.status,
+        amount_minor: attempt.amountMinor,
+        currency: attempt.currency,
+        billing_period_key: attempt.billingPeriodKey,
+        created_at: attempt.createdAt.toISOString(),
+        finalized_at: attempt.finalizedAt?.toISOString() ?? null,
+      })),
+    };
   }
 
   async cancelSubscription(request: Request, subscriptionId: string) {

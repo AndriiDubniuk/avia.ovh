@@ -39,6 +39,14 @@ export class PortalController {
     return this.portalService.getSubscription(request, id);
   }
 
+  @Get('subscriptions/:id/payment-attempts')
+  async getSubscriptionPaymentAttempts(
+    @Req() request: Request,
+    @Param('id') id: string,
+  ) {
+    return this.portalService.listSubscriptionPaymentAttempts(request, id);
+  }
+
   @Post('subscriptions/:id/cancel')
   async cancelSubscription(@Req() request: Request, @Param('id') id: string) {
     return this.portalService.cancelSubscription(request, id);

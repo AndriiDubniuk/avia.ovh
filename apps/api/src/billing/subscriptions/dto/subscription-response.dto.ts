@@ -12,4 +12,7 @@ export class SubscriptionResponseDto {
   next_charge_at: string | null;
   cancelled_at: string | null;
   created_at: string;
+  total_paid: number;
+  total_failed: number;
+  retry_count: number;
 }

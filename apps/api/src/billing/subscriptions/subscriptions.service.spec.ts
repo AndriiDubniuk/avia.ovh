@@ -55,6 +55,7 @@ describe('SubscriptionsService cancellation', () => {
     } as unknown as jest.Mocked<Repository<Subscription>>;
 
     paymentAttemptsRepository = {
+      count: jest.fn().mockResolvedValue(0),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     } as unknown as jest.Mocked<Repository<PaymentAttempt>>;
 

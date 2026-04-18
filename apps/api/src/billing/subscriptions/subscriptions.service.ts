@@ -139,7 +139,24 @@ export class SubscriptionsService {
     return this.toResponse(updated);
   }
 
-  private toResponse(subscription: Subscription): SubscriptionResponseDto {
+  private async toResponse(
+    subscription: Subscription,
+  ): Promise<SubscriptionResponseDto> {
+    const [totalPaid, totalFailed] = await Promise.all([
+      this.paymentAttemptsRepository.count({
+        where: {
+          subscriptionId: subscription.id,
+          status: PaymentAttemptStatus.Success,
+        },
+      }),
+      this.paymentAttemptsRepository.count({
+        where: {
+          subscriptionId: subscription.id,
+          status: PaymentAttemptStatus.Failed,
+        },
+      }),
+    ]);
+
     return {
       subscription_id: subscription.id,
       status: subscription.status,
@@ -151,6 +168,9 @@ export class SubscriptionsService {
       next_charge_at: subscription.nextChargeAt?.toISOString() ?? null,
       cancelled_at: subscription.cancelledAt?.toISOString() ?? null,
       created_at: subscription.createdAt.toISOString(),
+      total_paid: totalPaid,
+      total_failed: totalFailed,
+      retry_count: subscription.retryCount,
     };
   }
 }

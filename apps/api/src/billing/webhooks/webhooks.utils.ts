@@ -51,7 +51,7 @@ export function getStatus(
 ): MonobankWebhookStatus {
   const status = (asString(payload.status) ?? '').toLowerCase();
 
-  if (status === 'success') {
+  if (status === 'success' || status === 'paid') {
     return 'success';
   }
 

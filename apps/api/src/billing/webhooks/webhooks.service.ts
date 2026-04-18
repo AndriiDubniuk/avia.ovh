@@ -219,6 +219,14 @@ export class WebhooksService {
 
       const status = getStatus(payload);
       const providerPaymentId = getProviderPaymentId(payload);
+      const recurringKey = `native:${subscription.id}:${new Date().toISOString().slice(0, 7)}`;
+
+      if (status === 'unknown') {
+        this.logger.log(
+          `Ignoring unsupported monobank webhook status. invoiceId=${invoiceId ?? '-'}, checkoutId=${checkout.id}, subscriptionId=${subscription.id}`,
+        );
+        return { status: 'ignored' };
+      }
 
       if (status === 'success') {
         await checkoutRepository.update(
@@ -237,27 +245,53 @@ export class WebhooksService {
             },
           );
         } else {
-          const recurringKey = `native:${subscription.id}:${new Date().toISOString().slice(0, 7)}`;
-          await paymentAttemptsRepository.save(
-            paymentAttemptsRepository.create({
-              subscriptionId: subscription.id,
-              paymentMethodId: subscription.paymentMethodId,
-              checkoutSessionId: null,
-              type: PaymentAttemptType.Recurring,
-              status: PaymentAttemptStatus.Success,
-              amountMinor: subscription.amountMinor,
-              currency: subscription.currency,
-              billingPeriodKey: recurringKey,
-              idempotencyKey: `native:${checkout.id}:${providerPaymentId ?? Date.now()}`,
-              providerPaymentId: providerPaymentId ?? null,
-              providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
-              failureCode: null,
-              failureMessage: null,
-              retryNo: 0,
-              scheduledFor: null,
-              finalizedAt: new Date(),
-            }),
+          const existingRecurringAttempt = await paymentAttemptsRepository.findOne(
+            {
+              where: {
+                subscriptionId: subscription.id,
+                type: PaymentAttemptType.Recurring,
+                billingPeriodKey: recurringKey,
+                retryNo: 0,
+              },
+              lock: { mode: 'pessimistic_write' },
+            },
           );
+
+          if (existingRecurringAttempt) {
+            await paymentAttemptsRepository.update(
+              { id: existingRecurringAttempt.id },
+              {
+                status: PaymentAttemptStatus.Success,
+                providerPaymentId:
+                  providerPaymentId ?? existingRecurringAttempt.providerPaymentId,
+                providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
+                failureCode: null,
+                failureMessage: null,
+                finalizedAt: new Date(),
+              },
+            );
+          } else {
+            await paymentAttemptsRepository.save(
+              paymentAttemptsRepository.create({
+                subscriptionId: subscription.id,
+                paymentMethodId: subscription.paymentMethodId,
+                checkoutSessionId: null,
+                type: PaymentAttemptType.Recurring,
+                status: PaymentAttemptStatus.Success,
+                amountMinor: subscription.amountMinor,
+                currency: subscription.currency,
+                billingPeriodKey: recurringKey,
+                idempotencyKey: `native:${checkout.id}:${providerPaymentId ?? Date.now()}`,
+                providerPaymentId: providerPaymentId ?? null,
+                providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
+                failureCode: null,
+                failureMessage: null,
+                retryNo: 0,
+                scheduledFor: null,
+                finalizedAt: new Date(),
+              }),
+            );
+          }
         }
 
         const token = extractToken(payload);
@@ -370,25 +404,62 @@ export class WebhooksService {
         };
       }
 
-      const recurringAttempt = paymentAttemptsRepository.create({
-        subscriptionId: subscription.id,
-        paymentMethodId: subscription.paymentMethodId,
-        checkoutSessionId: null,
-        type: PaymentAttemptType.Recurring,
-        status: PaymentAttemptStatus.Failed,
-        amountMinor: subscription.amountMinor,
-        currency: subscription.currency,
-        billingPeriodKey: `native:${subscription.id}:${new Date().toISOString().slice(0, 7)}`,
-        idempotencyKey: `native:${checkout.id}:fail:${Date.now()}`,
-        providerPaymentId: providerPaymentId ?? null,
-        providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
-        failureCode,
-        failureMessage: null,
-        retryNo: 0,
-        scheduledFor: null,
-        finalizedAt: new Date(),
+      const existingRecurringAttempt = await paymentAttemptsRepository.findOne({
+        where: {
+          subscriptionId: subscription.id,
+          type: PaymentAttemptType.Recurring,
+          billingPeriodKey: recurringKey,
+          retryNo: 0,
+        },
+        lock: { mode: 'pessimistic_write' },
       });
-      await paymentAttemptsRepository.save(recurringAttempt);
+
+      let recurringAttempt: PaymentAttempt;
+      if (existingRecurringAttempt) {
+        recurringAttempt = {
+          ...existingRecurringAttempt,
+          status: PaymentAttemptStatus.Failed,
+          providerPaymentId:
+            providerPaymentId ?? existingRecurringAttempt.providerPaymentId,
+          providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
+          failureCode,
+          failureMessage: null,
+          finalizedAt: new Date(),
+        } as PaymentAttempt;
+
+        await paymentAttemptsRepository.update(
+          { id: existingRecurringAttempt.id },
+          {
+            status: PaymentAttemptStatus.Failed,
+            providerPaymentId:
+              providerPaymentId ?? existingRecurringAttempt.providerPaymentId,
+            providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
+            failureCode,
+            failureMessage: null,
+            finalizedAt: recurringAttempt.finalizedAt,
+          },
+        );
+      } else {
+        recurringAttempt = paymentAttemptsRepository.create({
+          subscriptionId: subscription.id,
+          paymentMethodId: subscription.paymentMethodId,
+          checkoutSessionId: null,
+          type: PaymentAttemptType.Recurring,
+          status: PaymentAttemptStatus.Failed,
+          amountMinor: subscription.amountMinor,
+          currency: subscription.currency,
+          billingPeriodKey: recurringKey,
+          idempotencyKey: `native:${checkout.id}:fail:${Date.now()}`,
+          providerPaymentId: providerPaymentId ?? null,
+          providerInvoiceId: invoiceId ?? checkout.providerInvoiceId,
+          failureCode,
+          failureMessage: null,
+          retryNo: 0,
+          scheduledFor: null,
+          finalizedAt: new Date(),
+        });
+        await paymentAttemptsRepository.save(recurringAttempt);
+      }
 
       await subscriptionRepository.update(
         { id: subscription.id },

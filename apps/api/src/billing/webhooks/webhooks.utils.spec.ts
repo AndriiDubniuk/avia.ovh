@@ -19,6 +19,7 @@ describe('webhooks.utils', () => {
 
   it('maps statuses', () => {
     expect(getStatus({ status: 'success' })).toBe('success');
+    expect(getStatus({ status: 'paid' })).toBe('success');
     expect(getStatus({ status: 'failure' })).toBe('failure');
     expect(getStatus({ status: 'expired' })).toBe('expired');
   });

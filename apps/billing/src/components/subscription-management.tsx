@@ -123,7 +123,6 @@ export function SubscriptionManagement({
     mode === "portal"
       ? `/v1/billing/portal/subscriptions/${encodeURIComponent(subscriptionId)}/payment-attempts`
       : `/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}/payment-attempts`;
-  const checkoutSessionPath = `/v1/billing/subscriptions/${encodeURIComponent(subscriptionId)}/checkout-session`;
 
   const loadSubscription = useCallback(async () => {
     setIsLoading(true);
@@ -265,42 +264,18 @@ export function SubscriptionManagement({
       return;
     }
 
+    if (!snapshot?.latest_checkout_url || isPendingCheckoutExpired) {
+      setFeedback(
+        "Час на оплату сплив. Будь ласка, зверніться до менеджера за новим персональним посиланням.",
+      );
+      return;
+    }
+
     setIsPaymentStarting(true);
     setFeedback("");
 
     try {
-      const returnUrl = `${window.location.origin}/result`;
-      if (
-        snapshot?.latest_checkout_url &&
-        !isPendingCheckoutExpired
-      ) {
-        window.location.href = snapshot.latest_checkout_url;
-        return;
-      }
-
-      const response = await fetch(`${apiBaseUrl}${checkoutSessionPath}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": createIdempotencyKey(`checkout-${subscriptionId}`),
-        },
-        body: JSON.stringify({
-          return_url: returnUrl,
-          tokenization_requested: true,
-        }),
-        credentials: "same-origin",
-      });
-      const data = (await response.json().catch(() => null)) as
-        | { checkout_url?: string; message?: string }
-        | null;
-
-      if (!response.ok || !data?.checkout_url) {
-        throw new Error(
-          data?.message ?? "Не вдалося створити checkout-сесію для оплати.",
-        );
-      }
-
-      window.location.href = data.checkout_url;
+      window.location.href = snapshot.latest_checkout_url;
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Помилка запуску оплати.");
     } finally {
@@ -473,18 +448,20 @@ export function SubscriptionManagement({
                   </button>
 
                   {canStartPayment ? (
-                    <button
-                      type="button"
-                      onClick={() => void onStartPayment()}
-                      disabled={isPaymentStarting}
-                      className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:opacity-60 sm:w-auto"
-                    >
-                      {isPaymentStarting
-                        ? "Створюємо checkout..."
-                        : isPendingCheckoutExpired
-                          ? "Створити нову оплату"
-                          : "Сплатити зараз"}
-                    </button>
+                    isPendingCheckoutExpired ? (
+                      <div className="w-full rounded-[1.2rem] border border-black/10 bg-white/80 px-4 py-3 text-sm text-black/70 sm:w-auto">
+                        Час на оплату сплив. Будь ласка, зверніться до менеджера за новим персональним посиланням.
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void onStartPayment()}
+                        disabled={isPaymentStarting}
+                        className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:opacity-60 sm:w-auto"
+                      >
+                        {isPaymentStarting ? "Переходимо..." : "Сплатити зараз"}
+                      </button>
+                    )
                   ) : null}
 
                   {canCancel ? (

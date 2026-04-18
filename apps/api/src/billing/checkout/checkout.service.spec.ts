@@ -112,6 +112,11 @@ describe('CheckoutService', () => {
     });
 
     expect(monobankAcquiring.createSubscription).toHaveBeenCalledTimes(1);
+    expect(monobankAcquiring.createSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reference: expect.any(String),
+      }),
+    );
     expect(result.provider_invoice_id).toBe('mono-subscription:mono-sub-1');
   });
 });

@@ -133,6 +133,7 @@ export class CheckoutService {
     const created = await this.monobankAcquiringService.createSubscription({
       amount: args.amountMinor,
       ccy: 980,
+      reference: args.checkoutSessionId,
       redirectUrl: args.redirectUrl,
       webHookUrls: {
         chargeUrl: webhookUrl,

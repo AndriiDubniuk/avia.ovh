@@ -8,6 +8,7 @@ import { createPublicKey, createVerify } from 'crypto';
 type CreateSubscriptionPayload = {
   amount: number;
   ccy: number;
+  reference?: string;
   redirectUrl: string;
   webHookUrls: {
     chargeUrl: string;

@@ -12,6 +12,10 @@ import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { CheckoutSession } from './entities/checkout-session.entity';
 import { CheckoutStatus } from './enums/checkout-status.enum';
 
+const DEFAULT_CHECKOUT_VALIDITY_SECONDS = 30 * 24 * 60 * 60;
+const MAX_CHECKOUT_VALIDITY_SECONDS = 30 * 24 * 60 * 60;
+const MIN_CHECKOUT_VALIDITY_SECONDS = 60;
+
 @Injectable()
 export class CheckoutService {
   constructor(
@@ -110,8 +114,10 @@ export class CheckoutService {
     const webhookUrl =
       this.configService.get<string>('MONOBANK_WEBHOOK_URL') ?? '';
 
+    const validitySeconds = this.resolveCheckoutValiditySeconds();
+
     if (mode === 'mock') {
-      const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + validitySeconds * 1000);
 
       return {
         providerInvoiceId: `mock-invoice-${args.checkoutSessionId}`,
@@ -143,15 +149,32 @@ export class CheckoutService {
         subscription.interval === SubscriptionInterval.Monthly
           ? '1m'
           : '1y',
-      validity: 3650,
+      validity: validitySeconds,
     });
 
     return {
       providerInvoiceId: `mono-subscription:${created.subscriptionId}`,
       providerSubscriptionId: created.subscriptionId,
       checkoutUrl: created.pageUrl,
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      expiresAt: new Date(Date.now() + validitySeconds * 1000),
       providerPayloadJson: created as Record<string, unknown>,
     };
+  }
+
+  private resolveCheckoutValiditySeconds() {
+    const raw = Number(
+      this.configService.get<string>('MONOBANK_CHECKOUT_VALIDITY_SECONDS') ??
+        DEFAULT_CHECKOUT_VALIDITY_SECONDS,
+    );
+
+    if (!Number.isFinite(raw)) {
+      return DEFAULT_CHECKOUT_VALIDITY_SECONDS;
+    }
+
+    const normalized = Math.floor(raw);
+    return Math.min(
+      MAX_CHECKOUT_VALIDITY_SECONDS,
+      Math.max(MIN_CHECKOUT_VALIDITY_SECONDS, normalized),
+    );
   }
 }

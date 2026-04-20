@@ -96,6 +96,7 @@ describe('CheckoutService', () => {
       if (key === 'MONOBANK_MODE') return 'real';
       if (key === 'MONOBANK_WEBHOOK_URL')
         return 'https://api.example.com/v1/billing/webhooks/monobank';
+      if (key === 'MONOBANK_CHECKOUT_VALIDITY_SECONDS') return '2592000';
       return undefined;
     });
 
@@ -115,6 +116,7 @@ describe('CheckoutService', () => {
     expect(monobankAcquiring.createSubscription).toHaveBeenCalledWith(
       expect.objectContaining({
         reference: expect.any(String),
+        validity: 2592000,
       }),
     );
     expect(result.provider_invoice_id).toBe('mono-subscription:mono-sub-1');

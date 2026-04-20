@@ -87,26 +87,64 @@ export class BillingEmailService {
       return;
     }
 
-    const plan = this.resolvePlan(input.subscription.amountMinor, input.subscription.interval);
+    const plan = this.resolvePlan(
+      input.subscription.amountMinor,
+      input.subscription.interval,
+    );
     const nextChargeDate = input.subscription.nextChargeAt?.toISOString() ?? null;
     const subjectPrefix = recipientType === 'internal' ? '[Billing] ' : '';
     const subject = `${subjectPrefix}${this.getSubject(input.kind)}`;
+    const checkoutId = input.checkoutId ?? input.paymentAttempt.checkoutSessionId ?? '-';
+    const publicBillingUrl = this.configService.get<string>('BILLING_PUBLIC_URL') ?? '';
+    const retryUrl =
+      recipientType === 'customer' &&
+      input.kind === 'initial_failure' &&
+      checkoutId &&
+      checkoutId !== '-' &&
+      publicBillingUrl
+        ? `${publicBillingUrl}/result?checkoutId=${checkoutId}`
+        : null;
+
     const lines = [
-      `Customer: ${input.client.name} <${input.client.email}>`,
-      `Plan: ${plan.name}`,
-      `Amount: ${input.subscription.amountMinor / 100} ${input.subscription.currency}`,
-      `Interval: ${input.subscription.interval}`,
-      `Subscription status: ${input.subscription.status}`,
-      `Next charge: ${nextChargeDate ?? '-'}`,
+      `Клієнт: ${input.client.name} <${input.client.email}>`,
+      `Тариф: ${plan.name}`,
+      `Сума: ${input.subscription.amountMinor / 100} ${input.subscription.currency}`,
+      `Інтервал: ${input.subscription.interval}`,
+      `Статус підписки: ${input.subscription.status}`,
+      `Наступне списання: ${nextChargeDate ?? '-'}`,
+    ];
+    const internalLines = [
       `Subscription ID: ${input.subscription.id}`,
       `Payment attempt ID: ${input.paymentAttempt.id}`,
-      `Checkout ID: ${input.checkoutId ?? input.paymentAttempt.checkoutSessionId ?? '-'}`,
+      `Checkout ID: ${checkoutId}`,
     ];
+    const allTextLines =
+      recipientType === 'internal' ? [...lines, ...internalLines] : lines;
 
-    const text = `${this.getTitle(input.kind)}\n\n${lines.join('\n')}`;
-    const html = `<p>${this.getTitle(input.kind)}</p><ul>${lines
-      .map((line) => `<li>${line}</li>`)
-      .join('')}</ul>`;
+    const text = [
+      this.getTitle(input.kind),
+      '',
+      ...allTextLines,
+      ...(retryUrl ? ['', `Спробувати ще раз: ${retryUrl}`] : []),
+    ].join('\n');
+
+    const listRows = allTextLines
+      .map((line) => {
+        const [label, ...rest] = line.split(': ');
+        const value = rest.join(': ');
+        return `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px;width:180px;">${label}</td><td style="padding:8px 0;color:#111827;font-size:14px;">${value}</td></tr>`;
+      })
+      .join('');
+    const retryBlock = retryUrl
+      ? `<div style="margin-top:20px;"><a href="${retryUrl}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:10px;font-weight:600;">Спробувати ще раз</a></div>`
+      : '';
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:560px;padding:20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="margin:0 0 14px 0;color:#111827;font-size:20px;">${this.getTitle(input.kind)}</h2>
+        <table style="width:100%;border-collapse:collapse;">${listRows}</table>
+        ${retryBlock}
+      </div>
+    `;
 
     try {
       await this.resendEmailService.send({
@@ -147,26 +185,26 @@ export class BillingEmailService {
   private getSubject(kind: PaymentOutcomeKind) {
     switch (kind) {
       case 'initial_success':
-        return 'Initial payment succeeded';
+        return 'Оплату підтверджено';
       case 'initial_failure':
-        return 'Initial payment failed or expired';
+        return 'Оплата не пройшла або сесія завершилась';
       case 'recurring_success':
-        return 'Recurring payment succeeded';
+        return 'Періодичне списання успішне';
       default:
-        return 'Recurring payment failed';
+        return 'Періодичне списання не пройшло';
     }
   }
 
   private getTitle(kind: PaymentOutcomeKind) {
     switch (kind) {
       case 'initial_success':
-        return 'Initial payment success';
+        return 'Перший платіж виконано успішно';
       case 'initial_failure':
-        return 'Initial payment failure/expiry';
+        return 'Перший платіж не підтверджено';
       case 'recurring_success':
-        return 'Recurring payment success';
+        return 'Автосписання виконано';
       default:
-        return 'Recurring payment failure';
+        return 'Автосписання не виконано';
     }
   }
 

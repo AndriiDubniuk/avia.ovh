@@ -68,6 +68,11 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    # `packages: read` потрібне, щоб GITHUB_TOKEN цього запуску міг
+    # авторизувати VPS у ghcr.io для `docker compose pull`.
+    permissions:
+      contents: read
+      packages: read
     needs:
       - build
     steps:
@@ -163,6 +168,22 @@ jobs:
             --exclude 'dist/' \
             --exclude 'output/' \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+
+      # Образи в GHCR приватні, а `docker compose pull` виконується вже на
+      # VPS — без логіну саме там реєстр відповідає `denied`. Логін у джобі
+      # build стосується лише раннера й на сервер не поширюється.
+      #
+      # Токен передаємо через stdin, а не аргументом: у командному рядку
+      # він був би видимий у `ps` на час виконання.
+      - name: Log in to GHCR on VPS
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
 
       - name: Deploy on VPS
         shell: bash

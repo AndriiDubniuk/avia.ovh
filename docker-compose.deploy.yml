@@ -99,6 +99,11 @@ services:
       - "traefik.http.routers.avia-web.entrypoints=websecure"
       - "traefik.http.routers.avia-web.tls.certresolver=letsencrypt"
       - "traefik.http.routers.avia-web.priority=10"
+      # HTML сторінок віддається без стиснення: Next з output:standalone
+      # його не робить, тож gzip/brotli вішаємо на проксі. 87 КБ /offer
+      # стискається приблизно до 12 КБ.
+      - "traefik.http.middlewares.avia-compress.compress=true"
+      - "traefik.http.routers.avia-web.middlewares=avia-compress"
       - "traefik.http.services.avia-web.loadbalancer.server.port=3000"
 
   billing:

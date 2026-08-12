@@ -1,105 +1,2216 @@
 @import "tailwindcss";
 
+/* ============================================================
+   AVIA — ALTITUDE
+   Порт макета 01-home.html. Значення збережені один в один.
+   ============================================================ */
+
 :root {
-  --background: #f7f3ea;
-  --foreground: #112217;
-  --card: rgba(255, 255, 255, 0.78);
-  --card-foreground: #112217;
-  --popover: #fcf8ef;
-  --popover-foreground: #112217;
-  --primary: #193728;
-  --primary-foreground: #f8f4e7;
-  --secondary: #e8dcc1;
-  --secondary-foreground: #203428;
-  --muted: #efe6d3;
-  --muted-foreground: #5b6a61;
-  --accent: #d4b46e;
-  --accent-foreground: #203428;
-  --destructive: #9d3f2f;
-  --border: rgba(25, 55, 40, 0.12);
-  --input: rgba(255, 255, 255, 0.92);
-  --ring: rgba(212, 180, 110, 0.45);
-  --radius: 1.5rem;
+  --ink: #04050a;
+  --night: #0a1026;
+  --strato: #16244f;
+  --haze: #cfe8e4;
+  --runway: #f4f1ea;
+  --muted: #8a93a8;
+  --signal: #79e3c4;
+  --rose: #ff7a5a;
+  --gold: #f5c24b;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: "Helvetica Neue", Inter, system-ui, -apple-system, Arial, sans-serif;
+
+  --line: rgba(207, 232, 228, 0.13);
+  --line-hi: rgba(207, 232, 228, 0.28);
+
+  --background: var(--ink);
+  --foreground: var(--runway);
+  --primary: var(--signal);
+  --primary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --border: var(--line);
+  --input: rgba(10, 16, 38, 0.5);
+  --ring: rgba(121, 227, 196, 0.35);
+  --destructive: var(--rose);
+  --radius: 0;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 10px);
-  --radius-md: calc(var(--radius) - 6px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 6px);
-  --font-sans: var(--font-sora);
-  --font-display: var(--font-cormorant);
+  --color-destructive: var(--destructive);
+  --color-signal: var(--signal);
+  --color-haze: var(--haze);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
 }
 
-* {
-  border-color: var(--border);
+/* Ресет мусить лежати в @layer base. Нешарований CSS у каскаді сильніший
+   за будь-який @layer, тому поза шаром `* { margin: 0 }` перебивав усі
+   утиліти Tailwind v4 (вони йдуть у @layer utilities) — mt-5/mt-7/mt-8/mt-10
+   у розмітці не давали жодного ефекту й блоки злипались. */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: var(--line);
+  }
 }
-
+html {
+  scroll-behavior: auto;
+}
 html,
 body {
-  min-height: 100%;
+  height: 100%;
 }
-
-html {
-  scroll-behavior: smooth;
-}
-
 body {
-  background:
-    radial-gradient(circle at top, rgba(212, 180, 110, 0.18), transparent 28%),
-    radial-gradient(circle at 90% 12%, rgba(25, 55, 40, 0.12), transparent 18%),
-    linear-gradient(180deg, #fbf7ef 0%, #f6f2e7 38%, #f1ebde 100%);
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sora), sans-serif;
+  background: var(--ink);
+  color: var(--runway);
+  font-family: var(--sans);
+  overflow-x: hidden;
+  cursor: none;
 }
-
-a,
-button,
-input,
-textarea {
-  transition:
-    color 180ms ease,
-    border-color 180ms ease,
-    background-color 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
+a {
+  color: inherit;
+  text-decoration: none;
 }
-
 ::selection {
-  background: rgba(212, 180, 110, 0.28);
+  background: var(--signal);
+  color: var(--ink);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
 }
 
-.grain {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%23193728' fill-opacity='0.045'%3E%3Ccircle cx='12' cy='14' r='1'/%3E%3Ccircle cx='76' cy='38' r='1'/%3E%3Ccircle cx='140' cy='24' r='1'/%3E%3Ccircle cx='34' cy='96' r='1'/%3E%3Ccircle cx='120' cy='88' r='1'/%3E%3Ccircle cx='168' cy='132' r='1'/%3E%3Ccircle cx='58' cy='148' r='1'/%3E%3Ccircle cx='94' cy='122' r='1'/%3E%3C/g%3E%3C/svg%3E");
+/* Курсор прихований дизайном, тому клавіатурний фокус має бути помітним. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+.cta:focus-visible {
+  outline-color: var(--runway);
+  outline-offset: 4px;
 }
 
-.section-title {
-  font-family: var(--font-cormorant), serif;
-  letter-spacing: -0.03em;
+/* Перехід одразу до контенту — перший таб на сторінці. */
+.skip {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 400;
+  transform: translateY(-160%);
+  background: var(--signal);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 14px 20px;
+  transition: transform 0.2s;
+}
+.skip:focus {
+  transform: none;
 }
 
-.shell {
+/* ---------- PRELOADER ---------- */
+#pre {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  transition:
+    opacity 0.9s ease,
+    visibility 0.9s;
+}
+#pre[data-gone="true"] {
+  opacity: 0;
+  visibility: hidden;
+}
+#pre .mk {
+  font-weight: 800;
+  letter-spacing: 0.5em;
+  font-size: 15px;
+  font-family: var(--mono);
+  color: var(--runway);
+}
+#pre .mk b {
+  color: var(--signal);
+}
+#pre .barwrap {
+  width: 220px;
+  height: 1px;
+  background: rgba(207, 232, 228, 0.2);
   position: relative;
   overflow: hidden;
+}
+#pre .barwrap i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background: var(--signal);
+}
+#pre .meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: var(--muted);
+}
+
+/* ---------- CUSTOM CURSOR ---------- */
+#cur {
+  position: fixed;
+  z-index: 300;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgba(207, 232, 228, 0.6);
+  border-radius: 50%;
+  pointer-events: none;
+  transition:
+    width 0.25s,
+    height 0.25s,
+    margin 0.25s,
+    background 0.25s,
+    border-color 0.25s;
+  mix-blend-mode: difference;
+}
+#cur:before {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px;
+  border-radius: 50%;
+  background: var(--signal);
+}
+#cur[data-big="true"] {
+  width: 74px;
+  height: 74px;
+  margin: -37px 0 0 -37px;
+  border-color: var(--signal);
+  background: rgba(121, 227, 196, 0.08);
+}
+#dot {
+  position: fixed;
+  z-index: 300;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px;
+  border-radius: 50%;
+  background: var(--signal);
+  pointer-events: none;
+}
+
+/* ---------- STAGE ---------- */
+#track {
+  height: 940vh;
+  position: relative;
+}
+#stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+#stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#stage[data-veil="true"]:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(4, 5, 10, 0.55),
+    rgba(4, 5, 10, 0.82) 42%,
+    rgba(4, 5, 10, 0.94)
+  );
+}
+
+/* ---------- FRAME UI ---------- */
+/* Шапка — один flex-рядок. Раніше логотип і права частина були двома
+   окремими fixed-елементами з однаковим top, і через різну висоту
+   вмісту логотип виглядав вищим за меню. */
+header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  /* Смуга згасання дорівнює нижньому падінгу: фон лишається щільним
+     рівно доти, доки в шапці є вміст, і тане вже під ним. Раніше стопи
+     стояли у відсотках висоти, і на мобільному рамка кнопки опинялась
+     на 68% висоти — там, де фон уже наполовину прозорий, тож вона
+     візуально вилазила за шапку. */
+  --head-fade: 28px;
+  padding: 16px 34px var(--head-fade);
+  background: linear-gradient(
+    180deg,
+    var(--ink) 0,
+    /* +6px, щоб згасання починалось під рамкою кнопки, а не по ній */
+    var(--ink) calc(100% - var(--head-fade) + 6px),
+    rgba(4, 5, 10, 0) 100%
+  );
+}
+#logo {
+  /* Панель меню — позиційований нащадок цієї ж шапки, тож без власного
+     z-index статичні логотип і права група опинялися під нею. */
+  position: relative;
+  z-index: 62;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.44em;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--runway);
+  mix-blend-mode: difference;
+}
+#logo b {
+  color: var(--signal);
+}
+#topright {
+  position: relative;
+  z-index: 62;
+  display: flex;
+  gap: 26px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--haze);
+  mix-blend-mode: difference;
+}
+#topright .navlinks {
+  display: none;
+  gap: 22px;
+}
+@media (min-width: 1000px) {
+  #topright .navlinks {
+    display: flex;
+  }
+}
+#topright .navlinks a {
+  opacity: 0.55;
+  cursor: none;
+  transition: 0.2s;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+#topright .navlinks a:hover {
+  opacity: 1;
+  color: var(--signal);
+  border-color: var(--signal);
+}
+#topright .book {
+  cursor: none;
+  color: var(--signal);
+  border: 1px solid rgba(121, 227, 196, 0.5);
+  padding: 8px 14px;
+  transition: 0.2s;
+}
+#topright .book:hover {
+  background: var(--signal);
+  color: var(--ink);
+}
+
+/* Підвал головної: лежить після треку, у звичайному потоці */
+/* Один компактний рядок унизу. Фон стає щільним за 130px — сцена s-cta
+   на цей момент уже згасла, тож накладання немає. */
+.homefoot {
+  position: relative;
+  z-index: 30;
+  background: linear-gradient(180deg, rgba(4, 5, 10, 0) 0, var(--ink) 130px);
+  padding: 130px 8vw 0;
+}
+.homefoot .inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 34px;
+  padding: 26px 0 30px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.homefoot .brand {
+  color: var(--muted);
+}
+.homefoot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  color: var(--haze);
+}
+.homefoot nav a {
+  cursor: none;
+  opacity: 0.72;
+  transition: 0.2s;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+.homefoot nav a:hover {
+  opacity: 1;
+  color: var(--signal);
+  border-color: var(--signal);
+}
+@media (max-width: 700px) {
+  .homefoot .inner {
+    justify-content: flex-start;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+}
+@media (max-width: 600px) {
+  .homefoot {
+    padding: 100px 6vw 0;
+  }
+}
+.langbtn {
+  cursor: none;
+  opacity: 0.5;
+  transition: 0.2s;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+.langbtn[data-on="true"] {
+  opacity: 1;
+  color: var(--signal);
+}
+#topright .sep {
+  opacity: 0.3;
+}
+
+/* HUD */
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  font-family: var(--mono);
+  mix-blend-mode: screen;
+  transition: opacity 0.25s linear;
+}
+.hc {
+  position: absolute;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--haze);
+  opacity: 0.8;
+  line-height: 1.7;
+}
+.hc b {
+  color: var(--signal);
+  font-weight: 600;
+}
+.hc.bl {
+  bottom: 26px;
+  left: 34px;
+}
+.hc.br {
+  bottom: 26px;
+  right: 34px;
+  text-align: right;
+}
+/* progress rail */
+#rail {
+  position: fixed;
+  right: 34px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  height: 200px;
+  width: 2px;
+  background: rgba(207, 232, 228, 0.14);
+  border-radius: 2px;
+  mix-blend-mode: screen;
+}
+#railfill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: var(--signal);
+  border-radius: 2px;
+}
+#railfill:after {
+  content: "";
+  position: absolute;
+  left: -3px;
+  bottom: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 12px var(--signal);
+}
+
+/* ---------- SCENES ---------- */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  padding: 0 8vw;
+  opacity: 0;
+  pointer-events: none;
+}
+.scene[data-off="true"],
+.scene[data-off="true"] * {
+  pointer-events: none;
+}
+.scene.center {
+  justify-content: center;
+  text-align: center;
+}
+.scene .content {
+  will-change: transform, opacity;
+  max-width: 1180px;
+}
+.scene.center .content {
+  margin: 0 auto;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.34em;
+  color: var(--signal);
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+}
+.eyebrow:before {
+  content: "";
+  width: 38px;
+  height: 1px;
+  background: var(--signal);
+  opacity: 0.85;
+}
+.scene.center .eyebrow {
+  justify-content: center;
+}
+.huge {
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  font-size: clamp(44px, 7.4vw, 116px);
+}
+.mid {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  font-size: clamp(34px, 5vw, 64px);
+}
+.sub {
+  margin-top: 28px;
+  max-width: 560px;
+  font-size: clamp(15px, 1.35vw, 19px);
+  line-height: 1.6;
+  color: rgba(244, 241, 234, 0.7);
+}
+.scene.center .sub {
+  margin-left: auto;
+  margin-right: auto;
+}
+.clr {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--haze);
+  line-height: 2;
+  border-left: 1px solid rgba(121, 227, 196, 0.55);
+  padding-left: 20px;
+  margin-top: 14px;
+}
+.clr b {
+  color: var(--signal);
+}
+
+/* manifesto kinetic lines */
+#s-man .content {
+  max-width: 1200px;
+}
+.manline {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  font-size: clamp(30px, 5.2vw, 74px);
+  color: #2a3352;
+  transition: color 0.1s;
+}
+.manline[data-lit="true"] {
+  color: var(--runway);
+}
+.manline em {
+  font-style: normal;
+  color: var(--signal);
+}
+
+/* avionics */
+#avionics {
+  width: 100%;
+  position: relative;
+}
+.av-nodes {
+  position: relative;
+  width: min(1000px, 84vw);
+  height: min(52vh, 480px);
+  margin: 22px auto 0;
+}
+.node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--haze);
+  pointer-events: auto;
+  cursor: none;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.node .dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--haze);
+  margin: 0 auto 10px;
+  box-shadow: 0 0 0 5px rgba(207, 232, 228, 0.06);
+  transition: 0.3s;
+}
+.node.core .dot {
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 35% 30%, #ffe7a8, #f5c24b 60%, #e09b2e);
+  box-shadow: 0 0 30px 8px rgba(245, 194, 75, 0.55);
+}
+.node:hover .dot,
+.node:focus-visible .dot {
+  background: var(--signal);
+  box-shadow: 0 0 24px 7px rgba(121, 227, 196, 0.6);
+  transform: scale(1.2);
+}
+.node.core:hover .dot,
+.node.core:focus-visible .dot {
+  background: radial-gradient(circle at 35% 30%, #ffe7a8, #f5c24b 60%, #e09b2e);
+  box-shadow: 0 0 34px 10px rgba(245, 194, 75, 0.65);
+  transform: scale(1.12);
+}
+.node label {
+  text-transform: uppercase;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.node:hover label,
+.node:focus-visible label {
+  opacity: 1;
+  color: #fff;
+}
+/* Підпис лежить поверх неба, а вгорі сторінки воно світле — muted-сірий
+   і мʼятий акцент там зникали. Суцільна плашка читалась як важкий сірий
+   прямокутник, тому контраст тримаємо темним ореолом навколо літер:
+   текст лишається «в повітрі», але видно його на будь-якій фазі градієнта. */
+#av-read {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  text-align: center;
+  margin: 30px auto 0;
+  min-height: 20px;
+  max-width: min(720px, 88vw);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.85),
+    0 0 14px rgba(0, 0, 0, 0.7),
+    0 0 30px rgba(0, 0, 0, 0.45);
+  transition: 0.2s;
+}
+#av-read b {
+  color: #b9f7e2;
+  font-weight: 700;
+}
+
+/* flight log */
+.log {
+  margin-top: 30px;
+  width: min(1000px, 84vw);
+}
+.leg {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 24px;
+  align-items: center;
+  padding: 22px 6px;
+  border-top: 1px solid rgba(207, 232, 228, 0.13);
+  pointer-events: auto;
+  cursor: none;
+  transition: 0.35s;
+}
+.leg:last-child {
+  border-bottom: 1px solid rgba(207, 232, 228, 0.13);
+}
+.leg:hover {
+  padding-left: 22px;
+  background: linear-gradient(90deg, rgba(121, 227, 196, 0.06), transparent);
+}
+.leg .no {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--signal);
+  letter-spacing: 0.1em;
+}
+.leg .dest {
+  font-weight: 800;
+  font-size: clamp(22px, 2.6vw, 34px);
+  letter-spacing: -0.03em;
+}
+/* Підзаголовок кейса лежить на світлішій частині градієнта, де --muted
+   (#8a93a8) майже зливається з фоном. Піднімаємо світлість і додаємо
+   тінь — рядок має читатись, а не вгадуватись. */
+.leg .cat {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  color: rgba(207, 232, 228, 0.82);
+  text-transform: uppercase;
+  margin-top: 5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+.leg .val {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  text-align: right;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+.leg .dest {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* flight plan */
+/* ============================================================
+   Процес: активна стадія + картки її підетапів.
+   Чотири стовпці одночасно читались як таблиця, а не як шлях,
+   тому показуємо одну стадію за раз і розганяємо її підетапи.
+   ============================================================ */
+.planflow {
+  width: min(1100px, 86vw);
+  margin-top: 34px;
+}
+
+/* Стрічка стадій — і навігація, і індикатор прогресу. */
+.planrail {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.planchip {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  /* Сцена прокрутки лежить під `pointer-events: none`, тому кожен клікабельний
+     елемент усередині мусить вмикати події сам — як це вже роблять .node і .leg.
+     Без цього чіп реагував лише на програмний клік, але не на мишу. */
+  pointer-events: auto;
+  padding: 14px 16px 16px;
+  background: rgba(10, 16, 38, 0.34);
+  border: 1px solid var(--line);
+  border-top: 2px solid rgba(207, 232, 228, 0.16);
+  color: inherit;
+  cursor: none;
+  transition: 0.35s;
+}
+.planchip .chipno {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+.planchip .chipph {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.planchip .chiptitle {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: rgba(244, 241, 234, 0.62);
+}
+.planchip[data-state="past"] {
+  border-top-color: rgba(121, 227, 196, 0.45);
+}
+.planchip[data-state="past"] .chiptitle {
+  color: rgba(244, 241, 234, 0.8);
+}
+.planchip[data-state="active"] {
+  border-top-color: var(--signal);
+  background: rgba(121, 227, 196, 0.08);
+}
+.planchip[data-state="active"] .chipph,
+.planchip[data-state="active"] .chipno {
+  color: var(--signal);
+}
+.planchip[data-state="active"] .chiptitle {
+  color: #fff;
+}
+.planchip:hover {
+  border-color: rgba(121, 227, 196, 0.35);
+}
+
+/* Тіло стадії — тільки картки підетапів: окрема картка стадії дослівно
+   повторювала активний чіп у стрічці вище. */
+.planstage {
+  margin-top: 14px;
+}
+.stageitems {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.stageitem {
+  padding: 20px 20px 22px;
+  border: 1px solid var(--line);
+  background: rgba(10, 16, 38, 0.32);
+  transition: border-color 0.25s, background 0.25s;
+  /* Картки не зʼявляються всі разом — розлітаються від картки стадії. */
+  animation: item-out 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(220ms + var(--i) * 130ms);
+}
+.stageitem:hover {
+  border-color: rgba(121, 227, 196, 0.32);
+  background: rgba(121, 227, 196, 0.05);
+}
+.stageitem .sino {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--signal);
+}
+.stageitem h3 {
+  margin: 10px 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.sitext {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(244, 241, 234, 0.62);
+}
+
+@keyframes item-out {
+  from {
+    opacity: 0;
+    transform: translate(-26px, 10px) scale(0.97);
+  }
+}
+
+@media (max-width: 900px) {
+  .planrail {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stageitems {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Рух вимкнено користувачем — картки просто стоять на місці. */
+@media (prefers-reduced-motion: reduce) {
+  .stageitem {
+    animation: none;
+  }
+}
+
+/* fares (pricing) */
+.fares {
+  margin-top: 28px;
+  width: min(1000px, 84vw);
+}
+.fare {
+  display: grid;
+  grid-template-columns: 1.5fr 0.9fr 0.8fr 1.7fr;
+  gap: 20px;
+  align-items: baseline;
+  padding: 19px 6px;
+  border-top: 1px solid rgba(207, 232, 228, 0.13);
+  transition: 0.3s;
+}
+.fare:last-child {
+  border-bottom: 1px solid rgba(207, 232, 228, 0.13);
+}
+.fare:hover {
+  padding-left: 14px;
+  background: linear-gradient(90deg, rgba(121, 227, 196, 0.06), transparent);
+}
+.fare .fn {
+  font-weight: 800;
+  font-size: clamp(17px, 1.9vw, 25px);
+  letter-spacing: -0.02em;
+}
+.fare .ff {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--signal);
+}
+.fare .fm {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--haze);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.fare .fi {
+  font-size: 13px;
+  color: rgba(244, 241, 234, 0.6);
+  line-height: 1.45;
+}
+.fare-note {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-top: 22px;
+  line-height: 1.85;
+  max-width: 840px;
+}
+.fare-note b {
+  color: var(--haze);
+}
+@media (max-width: 720px) {
+  .fare {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .fare .fi {
+    grid-column: 1/-1;
+  }
+}
+
+/* CTA */
+.cta {
+  pointer-events: auto;
+  cursor: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 36px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--signal);
+  border: 0;
+  padding: 20px 34px;
+  border-radius: 2px;
+  font-weight: 600;
+  transition: 0.25s;
+}
+.cta:hover {
+  background: #fff;
+  transform: translateY(-3px);
+}
+.cta:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.ghost {
+  pointer-events: auto;
+  cursor: none;
+  display: inline-flex;
+  gap: 10px;
+  margin-left: 18px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--haze);
+  border-bottom: 1px solid rgba(207, 232, 228, 0.4);
+  padding-bottom: 3px;
+  transition: 0.2s;
+}
+.ghost:hover {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+.markets {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  color: var(--muted);
+  margin-top: 30px;
+}
+.markets b {
+  color: var(--haze);
+}
+.record {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-top: 20px;
+  line-height: 2;
+}
+.record b {
+  color: var(--signal);
+}
+
+.scrollcue {
+  position: fixed;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--haze);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: opacity 0.4s;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.scrollcue .bar {
+  width: 1px;
+  height: 44px;
+  background: linear-gradient(var(--haze), transparent);
+  overflow: hidden;
+  position: relative;
+}
+.scrollcue .bar:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 14px;
+  background: var(--signal);
+  animation: drop 1.8s ease-in-out infinite;
+}
+@keyframes drop {
+  0% {
+    transform: translateY(-16px);
+  }
+  100% {
+    transform: translateY(46px);
+  }
+}
+
+/* ============================================================
+   Розділи поза польотом: умови, питання, форма, підвал,
+   а також сторінки оферти й політики.
+   ============================================================ */
+
+.ground {
+  position: relative;
+  z-index: 30;
+  background: linear-gradient(
+    180deg,
+    rgba(4, 5, 10, 0) 0%,
+    rgba(4, 5, 10, 0.92) 10%,
+    var(--ink) 24%
+  );
+}
+.page {
+  position: relative;
+  z-index: 20;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 150px 8vw 120px;
+}
+.sec {
+  margin-top: 104px;
+}
+.sec-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.sec-head .tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.crumb {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 34px;
+}
+.crumb a {
+  border-bottom: 1px solid transparent;
+  transition: 0.2s;
+}
+.crumb a:hover {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+.crumb i {
+  font-style: normal;
+  opacity: 0.35;
+}
+.crumb b {
+  color: var(--haze);
+  font-weight: 400;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: rgba(10, 16, 38, 0.42);
+  backdrop-filter: blur(6px);
+  padding: 30px 30px 32px;
+  position: relative;
+}
+.panel:before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 9px;
+  height: 9px;
+  border-top: 1px solid var(--signal);
+  border-left: 1px solid var(--signal);
+}
+.panel-lit {
+  border-color: rgba(121, 227, 196, 0.32);
+  background: rgba(121, 227, 196, 0.05);
+}
+.ptag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.panel h2,
+.panel h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: clamp(20px, 2vw, 27px);
+  margin: 14px 0 12px;
+  /* Заголовок панелі не тягнеться на всю ширину, але й не ламається зайвий раз */
+  max-width: 34ch;
+}
+.panel p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(244, 241, 234, 0.62);
+  /* Комфортна довжина рядка: у широких панелях було до 127 символів */
+  max-width: 68ch;
+}
+
+.check {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  padding: 15px 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(244, 241, 234, 0.76);
+  transition: 0.25s;
+}
+.check:hover {
+  border-color: rgba(121, 227, 196, 0.3);
+  background: rgba(121, 227, 196, 0.04);
+}
+.check:before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 10px rgba(121, 227, 196, 0.7);
+}
+
+.kv {
+  border: 1px solid var(--line);
+  padding: 18px 20px;
+  background: rgba(10, 16, 38, 0.35);
+}
+.kv .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.kv .v {
+  margin-top: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.qa {
+  border-top: 1px solid var(--line);
+}
+.qa article {
+  padding: 26px 6px;
+  border-bottom: 1px solid var(--line);
+  transition: 0.32s;
+}
+.qa article:hover {
+  padding-left: 20px;
+  background: linear-gradient(90deg, rgba(121, 227, 196, 0.06), transparent);
+}
+.qa h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: clamp(19px, 2vw, 24px);
+}
+.qa p {
+  margin-top: 12px;
+  /* Було 860px = 123 символи в рядку. 68ch тримає читабельну довжину. */
+  max-width: 68ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(244, 241, 234, 0.6);
+}
+
+.rowpair {
+  border-top: 1px solid var(--line);
+}
+.rowpair > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 22px;
+  align-items: center;
+  padding: 20px 6px;
+  border-bottom: 1px solid var(--line);
+  transition: 0.32s;
+}
+.rowpair > div:hover {
+  padding-left: 20px;
+  background: linear-gradient(90deg, rgba(121, 227, 196, 0.06), transparent);
+}
+.rowpair .ttl {
+  font-weight: 800;
+  font-size: clamp(17px, 1.8vw, 22px);
+  letter-spacing: -0.02em;
+}
+.rowpair .cat {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 5px;
+}
+.rowpair .val {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--haze);
+  text-transform: uppercase;
+}
+
+/* doc pages */
+.doc {
+  border-top: 1px solid var(--line);
+}
+.art {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 34px;
+  padding: 34px 0;
+  border-bottom: 1px solid var(--line);
+  transition: 0.3s;
+}
+.art:hover {
+  background: linear-gradient(90deg, rgba(121, 227, 196, 0.04), transparent);
+}
+.art .num {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--signal);
+}
+.art h2 {
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  font-size: clamp(20px, 2.1vw, 28px);
+  margin-bottom: 16px;
+}
+.art p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: rgba(244, 241, 234, 0.66);
+  margin-bottom: 13px;
+}
+.art p:last-child {
+  margin-bottom: 0;
+}
+/* Прихований до 1024px: на вузькому екрані липкий блок лягав поверх тексту.
+   Керуємо тут, а не утилітою — інакше .toc{display:grid} перебиває .hidden. */
+.toc {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .toc {
+    display: grid;
+    position: sticky;
+    top: 104px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    gap: 13px;
+    color: var(--muted);
+  }
+}
+.toc a {
+  transition: 0.2s;
+}
+.toc a:hover {
+  color: var(--signal);
+  padding-left: 8px;
+}
+
+/* form */
+.field > span {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.field .err {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--rose);
+}
+.field input,
+.field textarea {
+  width: 100%;
+  background: rgba(10, 16, 38, 0.5);
+  border: 1px solid var(--line);
+  color: var(--runway);
+  font-family: var(--sans);
+  font-size: 15px;
+  padding: 15px 17px;
+  outline: none;
+  border-radius: 0;
+  cursor: none;
+  transition: 0.22s;
+}
+.field textarea {
+  min-height: 130px;
+  resize: vertical;
+  line-height: 1.55;
+}
+.field input::placeholder,
+.field textarea::placeholder {
+  color: rgba(138, 147, 168, 0.65);
+}
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--signal);
+  background: rgba(121, 227, 196, 0.05);
+}
+.consent {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 18px 20px;
+}
+.consent a {
+  color: var(--haze);
+  border-bottom: 1px solid rgba(207, 232, 228, 0.35);
+}
+.consent a:hover {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+.alert {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  line-height: 1.85;
+  border: 1px solid rgba(255, 122, 90, 0.35);
+  background: rgba(255, 122, 90, 0.06);
+  color: #ffb6a0;
+  padding: 16px 20px;
+}
+.alert-ok {
+  border-color: rgba(121, 227, 196, 0.35);
+  background: rgba(121, 227, 196, 0.06);
+  color: var(--signal);
+}
+.note {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1.95;
+  /* Моношрифт із трекінгом читається важче — тримаємо рядок коротшим */
+  max-width: 74ch;
+}
+.note b {
+  color: var(--haze);
+}
+.btn {
+  cursor: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--haze);
+  background: transparent;
+  border: 1px solid var(--line-hi);
+  padding: 18px 28px;
+  transition: 0.25s;
+}
+.btn:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+  transform: translateY(-3px);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+.actions .cta,
+.actions .ghost {
+  margin-top: 0;
+  margin-left: 0;
+}
+
+.foot {
+  position: relative;
+  z-index: 20;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 8vw 90px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.foot .brand {
+  color: var(--haze);
+}
+.foot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+.foot nav a {
+  border-bottom: 1px solid transparent;
+  transition: 0.2s;
+}
+.foot nav a:hover {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+.rv {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rv[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- RESPONSIVE (як у макеті) ---------- */
+/* Сцена зафіксована на весь екран: якщо контент вищий за в'юпорт, він
+   обрізається без можливості доскролити. Даємо йому прокрутку всередині. */
+.scene .content {
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.scene .content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Низький екран: центрування залишає контент обрізаним з обох боків.
+   Прив'язуємо до верху — читання починається з заголовка. */
+@media (max-height: 720px) {
+  .scene {
+    align-items: flex-start;
+    padding-top: 92px;
+    padding-bottom: 34px;
+  }
+  .scene .content {
+    max-height: calc(100vh - 126px);
+  }
+}
+
+@media (max-width: 720px) {
+  .scene {
+    padding: 0 7vw;
+  }
+  .page {
+    padding: 120px 6vw 90px;
+  }
+  .sec {
+    margin-top: 72px;
+  }
+  .art {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .foot {
+    padding: 0 6vw 80px;
+  }
+  .cta,
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (hover: none) {
+  body {
+    cursor: auto;
+  }
+  #cur,
+  #dot {
+    display: none;
+  }
+  .node,
+  .cta,
+  .ghost,
+  .btn,
+  .field input,
+  .field textarea,
+  .leg {
+    cursor: auto;
+  }
+}
+@media (max-width: 600px) {
+  header {
+    --head-fade: 24px;
+    padding: 12px 18px var(--head-fade);
+  }
+  #logo {
+    font-size: 12px;
+    letter-spacing: 0.3em;
+  }
+  #topright {
+    gap: 14px;
+  }
+  /* «Запит на виліт» ламався на два рядки й розганяв шапку до 83px,
+     через що логотип і бургер стояли на різній висоті. */
+  #topright .book {
+    white-space: nowrap;
+    padding: 7px 10px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+  }
+  #rail {
+    display: none;
+  }
+  .hc {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .hc.bl {
+    left: 18px;
+    bottom: 18px;
+  }
+  .hc.br {
+    right: 18px;
+    bottom: 18px;
+  }
+  .scene {
+    padding: 0 6vw;
+  }
+  .huge {
+    font-size: clamp(34px, 10.5vw, 50px);
+  }
+  .mid {
+    font-size: clamp(26px, 8vw, 38px);
+  }
+  .sub {
+    font-size: 15px;
+    margin-top: 20px;
+  }
+  .clr {
+    font-size: 12px;
+  }
+  .manline {
+    font-size: clamp(26px, 8.5vw, 42px);
+  }
+  .av-nodes {
+    width: 94vw;
+    height: 58vh;
+    margin-top: 14px;
+  }
+  .node label {
+    font-size: 9px;
+    letter-spacing: 0.05em;
+  }
+  .node .dot {
+    width: 10px;
+    height: 10px;
+    margin-bottom: 7px;
+  }
+  .node.core .dot {
+    width: 16px;
+    height: 16px;
+  }
+  #av-read {
+    font-size: 12px;
+    margin-top: 18px;
+  }
+  .log {
+    width: 94vw;
+  }
+  .leg {
+    grid-template-columns: 38px 1fr;
+    gap: 12px;
+    padding: 18px 4px;
+  }
+  .leg .dest {
+    font-size: 24px;
+  }
+  .leg .val {
+    grid-column: 2;
+    text-align: left;
+    margin-top: 6px;
+  }
+  /* На вузькому екрані стрічка стадій і картки тиснуться щільніше. */
+  .planflow {
+    width: 94vw;
+  }
+  .planchip {
+    padding: 11px 12px 13px;
+  }
+  .planchip .chiptitle {
+    font-size: 15px;
+  }
+  .stageitem {
+    padding: 16px 16px 18px;
+  }
+  .fares {
+    width: 94vw;
+  }
+  /* Компактніші рядки: п'ять тарифів мають поміститись на екран 640px */
+  .fare {
+    padding: 12px 4px;
+    gap: 6px;
+  }
+  .fare .fi {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .fare-note {
+    margin-top: 14px;
+    font-size: 11px;
+    line-height: 1.7;
+  }
+  .leg {
+    padding: 13px 4px;
+  }
+  .log {
+    margin-top: 20px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    margin-bottom: 18px;
+  }
+  .cta {
+    font-size: 12px;
+    padding: 17px 24px;
+  }
+  .ghost {
+    font-size: 12px;
+    margin-left: 0;
+    margin-top: 14px;
+  }
+  .markets {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+  }
+  .record {
+    font-size: 11px;
+    line-height: 1.9;
+  }
+  .scrollcue {
+    font-size: 10px;
+    bottom: 26px;
+  }
+  .panel {
+    padding: 22px 20px 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    transition-duration: 0.15s;
+    transform: none;
+  }
+  .scrollcue .bar:after {
+    animation: none;
+  }
+}
+
+/* ---------- БУРГЕР І МОБІЛЬНЕ МЕНЮ ---------- */
+/* До 1000px рядок навігації ховається — без цього меню на планшеті
+   й телефоні не було жодного посилання, крім логотипа. */
+.burger {
+  display: grid;
+  gap: 5px;
+  padding: 10px 6px;
+  background: none;
+  border: 0;
+  cursor: none;
+}
+.burger i {
+  display: block;
+  width: 22px;
+  height: 1px;
+  background: var(--haze);
+  transition: 0.25s;
+}
+.burger[aria-expanded="true"] i:first-child {
+  transform: translateY(3px) rotate(45deg);
+  background: var(--signal);
+}
+.burger[aria-expanded="true"] i:last-child {
+  transform: translateY(-3px) rotate(-45deg);
+  background: var(--signal);
+}
+@media (min-width: 1000px) {
+  .burger {
+    display: none;
+  }
+}
+
+.menupanel {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 58;
+  background: rgba(4, 5, 10, 0.97);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+  padding: 96px 8vw 40px;
+  display: grid;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-12px);
+  transition:
+    opacity 0.28s,
+    transform 0.28s,
+    visibility 0.28s;
+}
+.menupanel[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.menupanel .mtag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 14px;
+}
+.menupanel .mtag:first-child {
+  margin-top: 0;
+}
+.menupanel nav {
+  display: grid;
+}
+.menupanel nav a {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--haze);
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  transition: 0.2s;
+}
+.menupanel nav a:hover,
+.menupanel nav a[aria-current="page"] {
+  color: var(--signal);
+  padding-left: 8px;
+}
+@media (min-width: 1000px) {
+  .menupanel {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .menupanel {
+    padding: 82px 6vw 32px;
+  }
+}
+
+/* ---------- ЄДИНИЙ ПІДВАЛ ---------- */
+.sitefoot {
+  position: relative;
+  z-index: 30;
+  padding: 0 8vw;
+}
+.sitefoot.overflight {
+  background: linear-gradient(180deg, rgba(4, 5, 10, 0) 0, var(--ink) 130px);
+  padding-top: 130px;
+}
+@media (max-width: 600px) {
+  .sitefoot.overflight {
+    padding-top: 100px;
+  }
+}
+.sitefoot .inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 34px;
+  padding: 26px 0 34px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.sitefoot .brand {
+  color: var(--muted);
+}
+.sitefoot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  color: var(--haze);
+}
+.sitefoot nav a {
+  cursor: none;
+  opacity: 0.72;
+  transition: 0.2s;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+.sitefoot nav a:hover,
+.sitefoot nav a[aria-current="page"] {
+  opacity: 1;
+  color: var(--signal);
+  border-color: var(--signal);
+}
+@media (max-width: 700px) {
+  .sitefoot {
+    padding: 0 6vw;
+  }
+  .sitefoot .inner {
+    justify-content: flex-start;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* ============================================================
+   КОМПОЗИЦІЯ ВНУТРІШНІХ СТОРІНОК
+   Hero тут не має займати перший екран: під ним функціонал.
+   Шрифт, накреслення, трекінг і колір ті самі — змінено лише
+   масштаб заголовка та вертикальні відступи.
+   ============================================================ */
+
+.page {
+  padding-top: 96px;
+  padding-bottom: 96px;
+  /* Бічний відступ більше не росте разом із екраном: інакше на 1920
+     контейнер 1180px віддавав 307px під порожнє поле. */
+  padding-inline: clamp(22px, 8vw, 56px);
+}
+/* Компактний масштаб H1 для робочих сторінок.
+   Головна не зачеплена: там заголовок живе в .scene. */
+.page .huge {
+  font-size: clamp(38px, 4.6vw, 68px);
+  line-height: 1;
+  /* Довгі українські слова не мають вилазити за межі колонки */
+  overflow-wrap: break-word;
+}
+.page .crumb {
+  margin-bottom: 24px;
+}
+/* Заголовок і опід під ним стояли впритул — 16px читалися як перенос
+   рядка, а не як окремий блок. */
+.page .sub {
+  margin-top: 26px;
+}
+.page .clr {
+  margin-top: 26px;
+}
+/* Опис і перший блок з рамкою/фоном теж потребують паузи більшої за
+   міжрядковий інтервал, інакше текст «прилипає» до картки. */
+.page .herorow {
+  margin-top: 32px;
+}
+.page .contactgrid {
+  margin-top: 46px;
+}
+/* Ряд карток із рамкою після абзацу тексту: 16–20px читались як частина
+   абзацу, тому картки «прилипали» до останнього рядка. */
+.page .kvgrid {
+  margin-top: 28px;
+}
+/* У двоколонковій сітці контактів верх плиток мусить збігатися з верхом
+   панелі форми. Успадкований відступ вище зсував ліву колонку на 28px
+   униз, і блоки починались на різній висоті. Селектор навмисно з трьох
+   класів: правило вище має два, і рівна вага залежала б від порядку. */
+.page .contactgrid .kvgrid {
+  margin-top: 0;
+}
+.page .sec {
+  margin-top: 84px;
+}
+
+/* Мета-рядок стає в один ряд із описом: вертикаль коротшає на висоту блока */
+@media (min-width: 1100px) {
+  .herorow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+  .herorow .sub {
+    margin-top: 0;
+    max-width: none;
+  }
+  .herorow .clr {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding-top: 88px;
+    padding-bottom: 72px;
+  }
+  .page .sec {
+    margin-top: 64px;
+  }
+}
+
+/* На вузькому екрані форма йде першою: це головна дія сторінки,
+   а довідкові блоки відсували її майже на 1200px униз. */
+@media (max-width: 1023px) {
+  .contactgrid > *:first-child {
+    order: 2;
+  }
+  .contactgrid > *:last-child {
+    order: 1;
+  }
+}
+
+
+
+/* ============================================================
+   Combobox каналу зв'язку — вигляд успадковує .field input,
+   щоб кнопка стояла в одному ряду з інпутами без стрибків.
+   ============================================================ */
+.cbx {
+  position: relative;
+}
+.cbx-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(10, 16, 38, 0.5);
+  border: 1px solid var(--line);
+  color: var(--runway);
+  font-family: var(--sans);
+  font-size: 15px;
+  padding: 15px 17px;
+  text-align: left;
+  cursor: none;
+  transition: 0.22s;
+}
+.cbx-btn[data-empty] {
+  color: rgba(138, 147, 168, 0.65);
+}
+.cbx-btn:hover,
+.cbx-btn:focus-visible {
+  border-color: var(--signal);
+  background: rgba(121, 227, 196, 0.05);
+  outline: none;
+}
+.cbx-btn[aria-invalid="true"] {
+  border-color: var(--rose);
+}
+.cbx-btn i {
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid var(--muted);
+  border-bottom: 1px solid var(--muted);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: 0.22s;
+  flex: none;
+}
+.cbx-btn i[data-open="true"] {
+  transform: rotate(-135deg) translate(-2px, -2px);
+  border-color: var(--signal);
+}
+
+.cbx-pop {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  border: 1px solid var(--line-hi);
+  background: #070c1c;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}
+.cbx-search {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--runway);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 13px 16px;
+  outline: none;
+  cursor: none;
+}
+.cbx-search::placeholder {
+  color: rgba(138, 147, 168, 0.65);
+}
+.cbx-list {
+  list-style: none;
+  max-height: 232px;
+  overflow-y: auto;
+}
+.cbx-opt {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: rgba(244, 241, 234, 0.8);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 12px 16px;
+  cursor: none;
+  transition: 0.16s;
+}
+.cbx-opt[data-active] {
+  background: rgba(121, 227, 196, 0.08);
+  color: var(--runway);
+}
+.cbx-opt[aria-selected="true"] {
+  color: var(--signal);
+}
+.cbx-empty {
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ============================================================
+   Етапи співпраці та картки «до платежу»
+   ============================================================ */
+/* Таймлайн, а не сітка карток: етапів пʼять, і в авторозкладці пʼятий
+   лишався сиротою в другому ряду. Рядок на етап дає місце під продаючий
+   текст і читається як послідовність. Патерн той самий, що в .art. */
+.steps {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+.step {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 30px;
+  padding: 30px 6px;
+  border-bottom: 1px solid var(--line);
+  transition: 0.3s;
+}
+.step:hover {
+  background: linear-gradient(90deg, rgba(121, 227, 196, 0.05), transparent);
+}
+.step-no {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--signal);
+}
+.step h3 {
+  font-size: clamp(19px, 1.9vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.step-text {
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(244, 241, 234, 0.66);
+  max-width: 76ch;
+}
+@media (max-width: 720px) {
+  .step {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.tcards {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+.tcard {
+  height: 100%;
+  border: 1px solid var(--line);
+  padding: 24px 24px 26px;
+  transition: 0.25s;
+}
+.tcard:hover {
+  border-color: rgba(121, 227, 196, 0.3);
+  background: rgba(121, 227, 196, 0.04);
+}
+.tcard h3 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.tcard p {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(244, 241, 234, 0.62);
+}
+
+/* Reveal обгортає кожну картку, тому висоту треба протягнути крізь нього,
+   інакше картки в ряду не вирівнюються по найвищій. */
+.tcards > .rv {
+  height: 100%;
+}
+
+/* ============================================================
+   404 — фірмове оформлення замість дефолтної сторінки Next
+   ============================================================ */
+.notfound .sub {
+  max-width: 620px;
+}
+/* Картки-виходи: та сама сітка, що в .tcards, але клікабельні цілком —
+   ціль 404 у тому, щоб користувач пішов далі, а не закрив вкладку. */
+.tcard.exit {
+  display: block;
+  pointer-events: auto;
+  cursor: none;
+}
+.tcard.exit:hover h3 {
+  color: var(--signal);
+}
+
+/* Підвал усередині останньої сцени: притиснутий до низу вʼюпорта, тому
+   зʼявляється разом зі сценою й не подовжує сторінку. Прозорість
+   успадковується від .scene, окремої логіки не потрібно. */
+.scene > .sitefoot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: auto;
+  text-align: left;
+}
+/* Сцена вже лежить над затемненим небом — власний градієнт підвалу тут
+   зайвий і давав смугу поперек екрана. */
+.scene > .sitefoot.overflight {
+  background: none;
+  padding-top: 0;
+}
+/* У сцені підвал компактніший за звичайний: повні відступи 26/34px на
+   екранах близько 600px зʼїдали простір, і текст CTA наїжджав на нього. */
+.scene > .sitefoot .inner {
+  padding: 14px 0 16px;
+}
+/* Місце під підвал, щоб він не перекривав текст на низьких екранах. */
+.scene:has(> .sitefoot) .content {
+  padding-bottom: 104px;
 }

@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 
+import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-chrome";
+import { Cockpit } from "@/components/cockpit";
+
 const defaultPayload = {
   client: {
     external_ref: "sandbox-client-001",
@@ -358,25 +361,33 @@ export function SubscriptionsSandbox() {
   }
 
   return (
-    <main className="billing-shell min-h-screen">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-10 lg:px-8">
-        <header className="rounded-[1.8rem] border border-black/10 bg-white/75 p-6">
-          <p className="text-xs uppercase tracking-[0.25em] text-black/50">Sandbox</p>
-          <h1 className="display mt-3 text-4xl font-semibold">Subscriptions API Tester</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-black/70">
+    <>
+      <Cockpit sky="climb" />
+      <BillingTop />
+
+      <main className="bpage bpage-wide">
+        <BillingCrumb page="Sandbox" />
+        <header>
+          <p className="devmark">Sandbox — internal · not for production</p>
+          <h1 className="huge" style={{ marginTop: 24 }}>
+            Subscriptions
+            <br />
+            API tester.
+          </h1>
+          <p className="mt-3 max-w-3xl text-sm leading-6 sbx-muted">
             Minimal UI for Phase 1C flow: create subscription, create checkout session,
             trigger mock webhook, and verify subscription state.
           </p>
         </header>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6">
+          <div className="panel">
             <label className="grid gap-2 text-sm">
               <span className="font-medium">API Base URL</span>
               <input
                 value={apiBase}
                 onChange={(event) => setApiBase(event.target.value)}
-                className="rounded-xl border border-black/10 bg-white px-3 py-2 outline-none focus:border-black"
+                className="sbx-input"
                 placeholder="http://localhost:3001"
               />
             </label>
@@ -387,12 +398,12 @@ export function SubscriptionsSandbox() {
                 <input
                   value={idempotencyKey}
                   onChange={(event) => setIdempotencyKey(event.target.value)}
-                  className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 outline-none focus:border-black"
+                  className="sbx-input"
                 />
                 <button
                   type="button"
                   onClick={refreshIdempotencyKey}
-                  className="rounded-xl border border-black/10 bg-white px-3 py-2 text-sm hover:bg-black/5"
+                  className="btn sbx-mini"
                 >
                   New
                 </button>
@@ -404,7 +415,7 @@ export function SubscriptionsSandbox() {
               <textarea
                 value={payloadText}
                 onChange={(event) => setPayloadText(event.target.value)}
-                className="min-h-52 rounded-xl border border-black/10 bg-white px-3 py-2 font-mono text-xs outline-none focus:border-black"
+                className="sbx-input sbx-json"
               />
             </label>
 
@@ -413,7 +424,7 @@ export function SubscriptionsSandbox() {
                 type="button"
                 disabled={isLoading}
                 onClick={runCreateSubscription}
-                className="rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                className="cta sbx-mini"
               >
                 POST create subscription
               </button>
@@ -421,7 +432,7 @@ export function SubscriptionsSandbox() {
                 type="button"
                 disabled={isLoading}
                 onClick={resetPayload}
-                className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-medium disabled:opacity-60"
+                className="btn sbx-mini"
               >
                 Reset JSON
               </button>
@@ -432,7 +443,7 @@ export function SubscriptionsSandbox() {
               <textarea
                 value={checkoutPayloadText}
                 onChange={(event) => setCheckoutPayloadText(event.target.value)}
-                className="min-h-32 rounded-xl border border-black/10 bg-white px-3 py-2 font-mono text-xs outline-none focus:border-black"
+                className="sbx-input sbx-json"
               />
             </label>
 
@@ -441,7 +452,7 @@ export function SubscriptionsSandbox() {
                 type="button"
                 disabled={isLoading}
                 onClick={runCreateCheckoutSession}
-                className="rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                className="cta sbx-mini"
               >
                 POST checkout-session
               </button>
@@ -449,20 +460,20 @@ export function SubscriptionsSandbox() {
                 type="button"
                 disabled={isLoading}
                 onClick={resetCheckoutPayload}
-                className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-medium disabled:opacity-60"
+                className="btn sbx-mini"
               >
                 Reset checkout JSON
               </button>
             </div>
           </div>
 
-          <div className="rounded-[1.8rem] border border-black/10 bg-[rgba(255,251,245,0.88)] p-6">
+          <div className="panel">
             <label className="grid gap-2 text-sm">
               <span className="font-medium">subscription_id</span>
               <input
                 value={subscriptionId}
                 onChange={(event) => setSubscriptionId(event.target.value)}
-                className="rounded-xl border border-black/10 bg-white px-3 py-2 outline-none focus:border-black"
+                className="sbx-input"
                 placeholder="Paste ID from response"
               />
             </label>
@@ -472,7 +483,7 @@ export function SubscriptionsSandbox() {
                 type="button"
                 disabled={isLoading}
                 onClick={runGetSubscription}
-                className="rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+                className="cta sbx-mini"
               >
                 GET subscription by id
               </button>
@@ -480,7 +491,7 @@ export function SubscriptionsSandbox() {
                 type="button"
                 disabled={isLoading || !hasCheckoutSession}
                 onClick={() => runMockWebhook("success")}
-                className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-medium disabled:opacity-60"
+                className="btn sbx-mini"
               >
                 Mock success webhook
               </button>
@@ -488,19 +499,19 @@ export function SubscriptionsSandbox() {
                 type="button"
                 disabled={isLoading || !hasCheckoutSession}
                 onClick={() => runMockWebhook("expired")}
-                className="rounded-full border border-black/10 bg-white px-5 py-2.5 text-sm font-medium disabled:opacity-60"
+                className="btn sbx-mini"
               >
                 Mock failure/expiry webhook
               </button>
             </div>
             {!hasCheckoutSession ? (
-              <p className="mt-2 text-xs text-black/60">
+              <p className="mt-2 text-xs sbx-muted">
                 Webhook mocks require a created checkout session first.
               </p>
             ) : null}
 
-            <div className="mt-6 rounded-xl border border-black/10 bg-black/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-black/55">Checkout response</p>
+            <div className="kv mt6">
+              <p className="text-xs uppercase tracking-[0.2em] sbx-muted">Checkout response</p>
               {checkoutSnapshot ? (
                 <div className="mt-3 space-y-1 text-sm">
                   <p>
@@ -531,25 +542,25 @@ export function SubscriptionsSandbox() {
                   </p>
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-black/60">No checkout session yet.</p>
+                <p className="mt-3 text-sm sbx-muted">No checkout session yet.</p>
               )}
             </div>
 
-            <div className="mt-4 rounded-xl border border-black/10 bg-black/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-black/55">
+            <div className="kv">
+              <p className="text-xs uppercase tracking-[0.2em] sbx-muted">
                 Current subscription snapshot
               </p>
               {subscriptionSnapshot ? (
-                <pre className="mt-3 max-h-40 overflow-auto rounded-lg bg-[#141414] p-3 font-mono text-xs text-white">
+                <pre className="code">
                   {pretty(subscriptionSnapshot)}
                 </pre>
               ) : (
-                <p className="mt-3 text-sm text-black/60">No subscription snapshot yet.</p>
+                <p className="mt-3 text-sm sbx-muted">No subscription snapshot yet.</p>
               )}
             </div>
 
-            <div className="mt-4 rounded-xl border border-black/10 bg-black/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-black/55">Last response</p>
+            <div className="kv">
+              <p className="text-xs uppercase tracking-[0.2em] sbx-muted">Last response</p>
               {log ? (
                 <div className="mt-3 space-y-2 text-sm">
                   <p className="font-medium">
@@ -558,17 +569,19 @@ export function SubscriptionsSandbox() {
                       {log.status !== null ? `(${log.status})` : "(request error)"}
                     </span>
                   </p>
-                  <pre className="max-h-72 overflow-auto rounded-lg bg-[#141414] p-3 font-mono text-xs text-white">
+                  <pre className="code">
                     {pretty(log.body)}
                   </pre>
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-black/60">No requests yet.</p>
+                <p className="mt-3 text-sm sbx-muted">No requests yet.</p>
               )}
             </div>
           </div>
         </section>
-      </div>
-    </main>
+      </main>
+
+      <BillingFooter />
+    </>
   );
 }

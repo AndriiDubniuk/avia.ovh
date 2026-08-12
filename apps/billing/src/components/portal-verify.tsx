@@ -3,15 +3,32 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-chrome";
+import { Cockpit } from "@/components/cockpit";
+import { useHref, useLang } from "@/components/lang-provider";
+import type { Dict } from "@/lib/i18n";
+
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
-export function PortalVerify({
-  token,
-}: {
-  token: string | null;
-}) {
+/**
+ * Повідомлення зберігається ключем, а не готовим рядком: інакше зміна мови
+ * не перекладала б уже показаний текст, а перевірка одноразового токена
+ * не повинна запускатись повторно лише через перемикання мови.
+ * Текст від сервера лишається як є — його не перекласти на клієнті.
+ */
+type Note =
+  | { kind: "key"; key: "checking" | "incomplete" | "expired" | "ready" | "failedGeneric" }
+  | { kind: "text"; text: string };
+
+function noteText(note: Note, t: Dict) {
+  return note.kind === "text" ? note.text : t.verify[note.key];
+}
+
+export function PortalVerify({ token }: { token: string | null }) {
+  const { t } = useLang();
+  const href = useHref();
   const [state, setState] = useState<"loading" | "success" | "failed">("loading");
-  const [message, setMessage] = useState("Перевіряємо magic link...");
+  const [note, setNote] = useState<Note>({ kind: "key", key: "checking" });
 
   const normalizedToken = useMemo(() => token?.trim() ?? "", [token]);
 
@@ -19,7 +36,7 @@ export function PortalVerify({
     async function runVerification() {
       if (!normalizedToken) {
         setState("failed");
-        setMessage("Magic link не містить token.");
+        setNote({ kind: "key", key: "incomplete" });
         return;
       }
 
@@ -35,16 +52,19 @@ export function PortalVerify({
           | null;
 
         if (!response.ok) {
-          throw new Error(data?.message ?? "Magic link недійсний або прострочений.");
+          throw new Error(data?.message ?? "");
         }
 
         setState("success");
-        setMessage("Доступ підтверджено. Переходимо до ваших підписок...");
+        setNote({ kind: "key", key: "ready" });
         window.location.href = "/portal/subscriptions";
       } catch (error) {
         setState("failed");
-        setMessage(
-          error instanceof Error ? error.message : "Не вдалося перевірити magic link.",
+        const message = error instanceof Error ? error.message.trim() : "";
+        setNote(
+          message
+            ? { kind: "text", text: message }
+            : { kind: "key", key: "expired" },
         );
       }
     }
@@ -52,27 +72,64 @@ export function PortalVerify({
     void runVerification();
   }, [normalizedToken]);
 
+  const heading =
+    state === "loading"
+      ? t.verify.headingLoading
+      : state === "success"
+        ? t.verify.headingSuccess
+        : t.verify.headingFailed;
+
+  const tone = state === "loading" ? "wait" : state === "success" ? "ok" : "bad";
+  const label =
+    state === "loading"
+      ? t.verify.labelLoading
+      : state === "success"
+        ? t.verify.labelSuccess
+        : t.verify.labelFailed;
+
   return (
-    <main className="billing-shell min-h-screen">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col justify-center px-6 py-10 lg:px-8">
-        <div className="rounded-[1.8rem] border border-black/10 bg-white/80 p-8">
-          <p className="text-xs uppercase tracking-[0.24em] text-black/45">Portal Verification</p>
-          <h1 className="display mt-3 text-4xl font-semibold">
-            {state === "loading" ? "Перевірка доступу..." : state === "success" ? "Успішно" : "Помилка доступу"}
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-black/70">{message}</p>
-          {state === "failed" ? (
-            <div className="mt-6">
-              <Link
-                href="/portal"
-                className="inline-flex rounded-full bg-black px-6 py-3 text-sm font-semibold text-white"
-              >
-                Запросити нове посилання
-              </Link>
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </main>
+    <>
+      <Cockpit sky="climb" />
+      <BillingTop />
+
+      <main className="bpage bpage-narrow bcenter">
+        <BillingCrumb page={t.verify.crumb} />
+
+        <div className="eyebrow">{t.verify.eyebrow}</div>
+        <div className={`status ${tone}`}>{label}</div>
+
+        <h1 className="huge" style={{ marginTop: 24 }}>
+          {heading.map((line, index) => (
+            <span key={line}>
+              {index > 0 ? <br /> : null}
+              {line}
+            </span>
+          ))}
+        </h1>
+
+        <p className="sub">{noteText(note, t)}</p>
+
+        {state === "failed" ? (
+          <div className="actions" style={{ marginTop: 32 }}>
+            <Link href={href("/portal")} className="cta">
+              {t.verify.newLink}
+            </Link>
+            <Link href={href("/")} className="btn">
+              {t.common.toCheckout}
+            </Link>
+          </div>
+        ) : null}
+
+        {state === "success" ? (
+          <div className="actions" style={{ marginTop: 32 }}>
+            <Link href={href("/portal/subscriptions")} className="cta">
+              {t.common.mySubs} →
+            </Link>
+          </div>
+        ) : null}
+      </main>
+
+      <BillingFooter />
+    </>
   );
 }

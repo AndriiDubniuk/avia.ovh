@@ -1,7 +1,14 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-chrome";
+import { Cockpit } from "@/components/cockpit";
+import { useLang } from "@/components/lang-provider";
+import { userMessage } from "@/lib/errors";
+import { Reveal } from "@/components/reveal";
+import { DICT, type Dict } from "@/lib/i18n";
 
 type SubscriptionSnapshot = {
   subscription_id: string;
@@ -33,7 +40,6 @@ type PaymentAttemptItem = {
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
 
 function createIdempotencyKey(prefix: string) {
   const randomPart =
@@ -44,38 +50,42 @@ function createIdempotencyKey(prefix: string) {
   return `${prefix}-${randomPart}`;
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("uk-UA", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 }
 
-function formatAmount(minor: number, currency: string) {
-  return new Intl.NumberFormat("uk-UA", {
+function formatAmount(minor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
   }).format(minor / 100);
 }
 
-export function summarizeHistory(snapshot: SubscriptionSnapshot): string[] {
+/** Словник необовʼязковий: без нього повертається українська — мова за замовчуванням. */
+export function summarizeHistory(
+  snapshot: SubscriptionSnapshot,
+  t: Dict = DICT.ua,
+): string[] {
   const summary: string[] = [];
 
   if (typeof snapshot.total_paid === "number") {
-    summary.push(`Успішних списань: ${snapshot.total_paid}`);
+    summary.push(t.manage.paidCount(snapshot.total_paid));
   }
 
   if (typeof snapshot.total_failed === "number") {
-    summary.push(`Невдалих списань: ${snapshot.total_failed}`);
+    summary.push(t.manage.failedCount(snapshot.total_failed));
   }
 
   if (typeof snapshot.retry_count === "number") {
-    summary.push(`Поточний retry_count: ${snapshot.retry_count}`);
+    summary.push(t.manage.retryCount(snapshot.retry_count));
   }
 
   return summary;
@@ -90,6 +100,7 @@ export function SubscriptionManagement({
   subscriptionId: string;
   mode?: SubscriptionManagementMode;
 }) {
+  const { t } = useLang();
   const [snapshot, setSnapshot] = useState<SubscriptionSnapshot | null>(null);
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -100,8 +111,8 @@ export function SubscriptionManagement({
   const [paymentAttempts, setPaymentAttempts] = useState<PaymentAttemptItem[]>([]);
 
   const historySummary = useMemo(
-    () => (snapshot ? summarizeHistory(snapshot) : []),
-    [snapshot],
+    () => (snapshot ? summarizeHistory(snapshot, t) : []),
+    [snapshot, t],
   );
 
   const canCancel = Boolean(
@@ -139,20 +150,18 @@ export function SubscriptionManagement({
 
       if (!response.ok || !data || !("subscription_id" in (data as object))) {
         throw new Error(
-          data && "message" in data && data.message
-            ? data.message
-            : `Не вдалося отримати підписку (${response.status}).`,
+          data && "message" in data && data.message ? data.message : t.manage.errLoad,
         );
       }
 
       setSnapshot(data as SubscriptionSnapshot);
       setFeedback("");
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Помилка завантаження підписки.");
+      setFeedback(userMessage(error, t.manage.errLoad));
     } finally {
       setIsLoading(false);
     }
-  }, [mode, subscriptionPath]);
+  }, [mode, subscriptionPath, t]);
 
   const loadPaymentAttempts = useCallback(async () => {
     setIsHistoryLoading(true);
@@ -168,19 +177,17 @@ export function SubscriptionManagement({
 
       if (!response.ok || !data || !Array.isArray(data.items)) {
         throw new Error(
-          data && "message" in data && data.message
-            ? data.message
-            : `Не вдалося отримати платіжні операції (${response.status}).`,
+          data && "message" in data && data.message ? data.message : t.manage.errHistory,
         );
       }
 
       setPaymentAttempts(data.items);
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Помилка завантаження операцій.");
+      setFeedback(userMessage(error, t.manage.errHistory));
     } finally {
       setIsHistoryLoading(false);
     }
-  }, [mode, paymentAttemptsPath]);
+  }, [mode, paymentAttemptsPath, t]);
 
   useEffect(() => {
     if (snapshot?.status === "pending_initial_payment") {
@@ -236,16 +243,14 @@ export function SubscriptionManagement({
 
       if (!response.ok || !data || !("subscription_id" in (data as object))) {
         throw new Error(
-          data && "message" in data && data.message
-            ? data.message
-            : "Не вдалося скасувати підписку.",
+          data && "message" in data && data.message ? data.message : t.manage.errCancel,
         );
       }
 
       setSnapshot(data as SubscriptionSnapshot);
-      setFeedback("Автопродовження скасовано.");
+      setFeedback(t.manage.cancelledMsg);
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Помилка скасування.");
+      setFeedback(userMessage(error, t.manage.errCancelRetry));
     } finally {
       setIsCancelling(false);
     }
@@ -265,9 +270,7 @@ export function SubscriptionManagement({
     }
 
     if (!snapshot?.latest_checkout_url || isPendingCheckoutExpired) {
-      setFeedback(
-        "Час на оплату сплив. Будь ласка, зверніться до менеджера за новим персональним посиланням.",
-      );
+      setFeedback(t.manage.checkoutExpired);
       return;
     }
 
@@ -277,189 +280,194 @@ export function SubscriptionManagement({
     try {
       window.location.href = snapshot.latest_checkout_url;
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Помилка запуску оплати.");
+      setFeedback(userMessage(error, t.manage.errPay));
     } finally {
       setIsPaymentStarting(false);
     }
   }
 
+  const tone =
+    snapshot?.status === "active"
+      ? "ok"
+      : snapshot?.status === "cancelled"
+        ? "off"
+        : snapshot && ["past_due", "suspended", "failed"].includes(snapshot.status)
+          ? "bad"
+          : "wait";
+
   return (
-    <main className="billing-shell min-h-screen">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-10 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-black/45">AVIA Billing</p>
-            <h1 className="display mt-3 text-4xl font-semibold sm:text-5xl">Керування підпискою</h1>
+    <>
+      <Cockpit sky="climb" />
+      <BillingTop>
+        <Link href={mode === "portal" ? "/portal/subscriptions" : "/"} className="ghost">
+          {mode === "portal" ? t.manage.topLinkPortal : t.manage.topLinkPublic}
+        </Link>
+      </BillingTop>
+
+      <main className="bpage">
+        <BillingCrumb page={t.manage.crumb} />
+
+        <Reveal>
+          <div className="eyebrow">{t.manage.eyebrow}</div>
+          <h1 className="huge">{t.manage.title}</h1>
+          <p className="sub">{t.manage.sub}</p>
+        </Reveal>
+
+        <Reveal>
+          <div className="panel mt6">
+            <p className="ptag">{t.manage.idTag}</p>
+            <p className="sid">{subscriptionId}</p>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <Link
-              href="/"
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
-            >
-              До checkout
-            </Link>
-            <Link
-              href={mode === "portal" ? "/portal/subscriptions" : landingUrl}
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
-            >
-              {mode === "portal" ? "Мої підписки" : "На головну"}
-            </Link>
-          </div>
-        </header>
+        </Reveal>
 
-        <section className="grid flex-1 gap-6 py-10">
-          <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 shadow-[0_24px_70px_-55px_rgba(0,0,0,0.45)]">
-            <p className="text-sm uppercase tracking-[0.22em] text-black/45">Subscription ID</p>
-            <p className="mt-2 break-all font-mono text-sm">{subscriptionId}</p>
-          </div>
+        {feedback ? <p className="alert mt6">{feedback}</p> : null}
 
-          {feedback ? (
-            <div className="rounded-[1.4rem] border border-[var(--danger)]/18 bg-[var(--danger)]/6 px-5 py-4 text-sm text-[var(--danger)]">
-              {feedback}
-            </div>
-          ) : null}
+        {isLoading ? <p className="note mt6">{t.manage.loading}</p> : null}
 
-          {isLoading ? (
-            <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 text-sm text-black/60">
-              Завантажуємо дані підписки...
-            </div>
-          ) : null}
-
-          {!isLoading && snapshot ? (
-            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-              <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6">
-                <p className="text-sm uppercase tracking-[0.22em] text-black/45">Поточний стан</p>
-                <div className="mt-4 grid gap-3">
-                  <StatItem label="Статус" value={snapshot.status} />
-                  <StatItem
-                    label="Сума"
-                    value={formatAmount(snapshot.amount_minor, snapshot.currency)}
-                  />
-                  <StatItem label="Інтервал" value={snapshot.interval} />
-                  <StatItem
-                    label="Наступне списання"
-                    value={formatDate(snapshot.next_charge_at)}
-                  />
-                  <StatItem
-                    label="Скасовано"
-                    value={formatDate(snapshot.cancelled_at)}
-                  />
+        {!isLoading && snapshot ? (
+          <div className="split split-l">
+            <Reveal>
+              <div className="panel">
+                <p className="ptag">{t.manage.stateTag}</p>
+                <div className={`status ${tone}`} style={{ marginTop: 18 }}>
+                  {snapshot.status}
+                </div>
+                <div className="stack" style={{ marginTop: 18 }}>
+                  <div className="kv">
+                    <p className="k">{t.common.amount}</p>
+                    <p className="v" style={{ fontSize: 28, fontWeight: 800, color: "var(--signal)" }}>
+                      {formatAmount(snapshot.amount_minor, snapshot.currency, t.locale)}
+                    </p>
+                  </div>
+                  <div className="kv">
+                    <p className="k">{t.common.interval}</p>
+                    <p className="v" style={{ fontFamily: "var(--mono)", fontSize: 13 }}>
+                      {snapshot.interval}
+                    </p>
+                  </div>
+                  <div className="kv">
+                    <p className="k">{t.common.nextCharge}</p>
+                    <p className="v" style={{ fontFamily: "var(--mono)", fontSize: 13 }}>
+                      {formatDate(snapshot.next_charge_at, t.locale)}
+                    </p>
+                  </div>
+                  <div className="kv">
+                    <p className="k">{t.common.cancelledAt}</p>
+                    <p className="v" style={{ fontFamily: "var(--mono)", fontSize: 13 }}>
+                      {formatDate(snapshot.cancelled_at, t.locale)}
+                    </p>
+                  </div>
                 </div>
               </div>
+            </Reveal>
 
-              <div className="rounded-[1.8rem] border border-black/10 bg-[rgba(255,251,245,0.88)] p-6">
-                <p className="text-sm uppercase tracking-[0.22em] text-black/45">
-                  Платіжна історія (summary)
-                </p>
+            <Reveal delay={80}>
+              <div className="panel">
+                <p className="ptag">{t.manage.historyTag}</p>
 
                 {historySummary.length > 0 ? (
-                  <div className="mt-4 grid gap-3">
-                    <button
-                      type="button"
-                      onClick={() => void onToggleHistory("success")}
-                      className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-left text-sm text-black/75"
+                  <>
+                    <details
+                      className="acc"
+                      open={expandedHistoryKind === "success"}
+                      onToggle={(event) => {
+                        if ((event.currentTarget as HTMLDetailsElement).open) {
+                          void onToggleHistory("success");
+                        }
+                      }}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <span>Успішних списань: {snapshot.total_paid ?? 0}</span>
+                      <summary>
+                        <span>{t.manage.paidCount(snapshot.total_paid ?? 0)}</span>
                         <span>{expandedHistoryKind === "success" ? "▾" : "▸"}</span>
-                      </div>
-                    </button>
-
-                    {expandedHistoryKind === "success" ? (
-                      <div className="grid gap-3">
-                        {isHistoryLoading ? (
-                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
-                            Завантажуємо операції...
+                      </summary>
+                      {isHistoryLoading ? (
+                        <div className="att">{t.manage.historyLoading}</div>
+                      ) : successfulAttempts.length > 0 ? (
+                        successfulAttempts.map((attempt) => (
+                          <div key={attempt.payment_attempt_id} className="att">
+                            <b>
+                              {attempt.type} · {attempt.status}
+                            </b>
+                            <br />
+                            <span className="amt">
+                              {formatAmount(attempt.amount_minor, attempt.currency, t.locale)}
+                            </span>
+                            <br />
+                            {t.manage.created}: {formatDate(attempt.created_at, t.locale)}
+                            <br />
+                            {t.manage.finalized}: {formatDate(attempt.finalized_at, t.locale)}
                           </div>
-                        ) : successfulAttempts.length > 0 ? (
-                          successfulAttempts.map((attempt) => (
-                            <div
-                              key={attempt.payment_attempt_id}
-                              className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/70"
-                            >
-                              <p>{attempt.type} · {attempt.status}</p>
-                              <p>{formatAmount(attempt.amount_minor, attempt.currency)}</p>
-                              <p>Створено: {formatDate(attempt.created_at)}</p>
-                              <p>Завершено: {formatDate(attempt.finalized_at)}</p>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
-                            Успішних операцій ще немає.
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
+                        ))
+                      ) : (
+                        <div className="att">{t.manage.noPaid}</div>
+                      )}
+                    </details>
 
-                    <button
-                      type="button"
-                      onClick={() => void onToggleHistory("failed")}
-                      className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-left text-sm text-black/75"
+                    <details
+                      className="acc"
+                      open={expandedHistoryKind === "failed"}
+                      onToggle={(event) => {
+                        if ((event.currentTarget as HTMLDetailsElement).open) {
+                          void onToggleHistory("failed");
+                        }
+                      }}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <span>Невдалих списань: {snapshot.total_failed ?? 0}</span>
+                      <summary>
+                        <span>{t.manage.failedCount(snapshot.total_failed ?? 0)}</span>
                         <span>{expandedHistoryKind === "failed" ? "▾" : "▸"}</span>
-                      </div>
-                    </button>
-
-                    {expandedHistoryKind === "failed" ? (
-                      <div className="grid gap-3">
-                        {isHistoryLoading ? (
-                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
-                            Завантажуємо операції...
+                      </summary>
+                      {isHistoryLoading ? (
+                        <div className="att">{t.manage.historyLoading}</div>
+                      ) : failedAttempts.length > 0 ? (
+                        failedAttempts.map((attempt) => (
+                          <div key={attempt.payment_attempt_id} className="att">
+                            <b>
+                              {attempt.type} · <span className="fail">{attempt.status}</span>
+                            </b>
+                            <br />
+                            <span className="fail">
+                              {formatAmount(attempt.amount_minor, attempt.currency, t.locale)}
+                            </span>
+                            <br />
+                            {t.manage.created}: {formatDate(attempt.created_at, t.locale)}
+                            <br />
+                            {t.manage.finalized}: {formatDate(attempt.finalized_at, t.locale)}
                           </div>
-                        ) : failedAttempts.length > 0 ? (
-                          failedAttempts.map((attempt) => (
-                            <div
-                              key={attempt.payment_attempt_id}
-                              className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/70"
-                            >
-                              <p>{attempt.type} · {attempt.status}</p>
-                              <p>{formatAmount(attempt.amount_minor, attempt.currency)}</p>
-                              <p>Створено: {formatDate(attempt.created_at)}</p>
-                              <p>Завершено: {formatDate(attempt.finalized_at)}</p>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="rounded-[1.2rem] border border-black/8 bg-white/75 px-4 py-3 text-sm text-black/60">
-                            Невдалих операцій немає.
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
+                        ))
+                      ) : (
+                        <div className="att">{t.manage.noFailed}</div>
+                      )}
+                    </details>
 
-                    <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm text-black/75">
-                      Поточний retry_count: {snapshot.retry_count ?? 0}
+                    <div className="kv" style={{ marginTop: 16 }}>
+                      <p className="k">{t.manage.retries}</p>
+                      <p className="v" style={{ fontSize: 28, fontWeight: 800 }}>
+                        {snapshot.retry_count ?? 0}
+                      </p>
                     </div>
-                  </div>
+                  </>
                 ) : (
-                  <p className="mt-4 text-sm text-black/60">
-                    Summary ще недоступний у поточній відповіді API.
+                  <p className="note" style={{ marginTop: 16 }}>
+                    {t.manage.historyUnavailable}
                   </p>
                 )}
 
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void loadSubscription()}
-                    className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5 sm:w-auto"
-                  >
-                    Оновити
+                <div className="actions mt6">
+                  <button type="button" className="btn" onClick={() => void loadSubscription()}>
+                    {t.common.refresh}
                   </button>
 
                   {canStartPayment ? (
                     isPendingCheckoutExpired ? (
-                      <div className="w-full rounded-[1.2rem] border border-black/10 bg-white/80 px-4 py-3 text-sm text-black/70 sm:w-auto">
-                        Час на оплату сплив. Будь ласка, зверніться до менеджера за новим персональним посиланням.
-                      </div>
+                      <p className="note">{t.manage.checkoutExpired}</p>
                     ) : (
                       <button
                         type="button"
+                        className="cta"
                         onClick={() => void onStartPayment()}
                         disabled={isPaymentStarting}
-                        className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:opacity-60 sm:w-auto"
                       >
-                        {isPaymentStarting ? "Переходимо..." : "Сплатити зараз"}
+                        {isPaymentStarting ? t.manage.payOpening : t.manage.payNow}
                       </button>
                     )
                   ) : null}
@@ -467,28 +475,38 @@ export function SubscriptionManagement({
                   {canCancel ? (
                     <button
                       type="button"
+                      className="btn"
                       onClick={onCancel}
                       disabled={isCancelling}
-                      className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:opacity-60 sm:w-auto"
                     >
-                      {isCancelling ? "Скасовуємо..." : "Скасувати автопродовження"}
+                      {isCancelling ? t.common.cancelling : t.common.cancelAuto}
                     </button>
                   ) : null}
                 </div>
               </div>
-            </div>
-          ) : null}
-        </section>
-      </div>
-    </main>
-  );
-}
+            </Reveal>
+          </div>
+        ) : null}
 
-function StatItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.25rem] border border-black/8 bg-black/[0.03] px-4 py-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-black/45">{label}</p>
-      <p className="mt-2 text-base font-medium">{value}</p>
-    </div>
+        <section className="sec">
+          <Reveal>
+            <div className="panel panel-lit">
+              <p className="ptag">{t.manage.aboutTag}</p>
+              <h3>{t.manage.aboutTitle}</h3>
+              <p>{t.manage.aboutBody}</p>
+              <div className="stack mt6">
+                {t.manage.aboutChecks.map((check) => (
+                  <p key={check} className="check">
+                    {check}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        </section>
+      </main>
+
+      <BillingFooter />
+    </>
   );
 }

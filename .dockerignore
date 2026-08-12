@@ -10,3 +10,7 @@ apps/billing/.next
 apps/web/node_modules
 apps/api/node_modules
 apps/billing/node_modules
+# Локальні env-файли мають вищий пріоритет за .env.production і, потрапивши
+# в образ, перекрили б продові URL (canonical став би localhost).
+**/.env.local
+**/.env.*.local

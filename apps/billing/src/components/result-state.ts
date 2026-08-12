@@ -1,3 +1,5 @@
+import { DICT, type Dict } from "@/lib/i18n";
+
 export type BillingResultState =
   | "active"
   | "past_due"
@@ -16,72 +18,52 @@ export type ResultStateUi = {
   ctaVariant: "primary" | "secondary";
 };
 
-export function getResultStateUi(status: BillingResultState): ResultStateUi {
+type StateKey = keyof Dict["states"];
+
+/** Маршрут і вигляд кнопки не залежать від мови — лише від стану. */
+const SHAPE: Record<StateKey, { href: string; variant: "primary" | "secondary" }> = {
+  active: { href: "/", variant: "secondary" },
+  past_due: { href: "/", variant: "primary" },
+  suspended: { href: "/", variant: "primary" },
+  cancelled: { href: "/", variant: "secondary" },
+  failed: { href: "/", variant: "primary" },
+  expired: { href: "/", variant: "primary" },
+  awaiting_payment: { href: "#refresh", variant: "secondary" },
+  unknown: { href: "#refresh", variant: "secondary" },
+};
+
+function stateKey(status: BillingResultState): StateKey {
   switch (status) {
     case "active":
-      return {
-        description:
-          "Підписка активна. Наступне списання відбудеться автоматично у заплановану дату.",
-        ctaLabel: "До сторінки оплати",
-        ctaHref: "/",
-        ctaVariant: "secondary",
-      };
     case "past_due":
-      return {
-        description:
-          "Чергове списання не пройшло. Перевірте статус та, за потреби, оновіть платіжний метод через новий checkout.",
-        ctaLabel: "Оформити нову оплату",
-        ctaHref: "/",
-        ctaVariant: "primary",
-      };
     case "suspended":
-      return {
-        description:
-          "Підписку призупинено після кількох невдалих списань. Щоб продовжити, потрібно оформити новий checkout.",
-        ctaLabel: "Відновити через checkout",
-        ctaHref: "/",
-        ctaVariant: "primary",
-      };
     case "cancelled":
-      return {
-        description:
-          "Автопродовження вимкнено. Нових списань більше не буде, доки ви не оформите підписку знову.",
-        ctaLabel: "Оформити нову підписку",
-        ctaHref: "/",
-        ctaVariant: "secondary",
-      };
+    case "expired":
+    case "awaiting_payment":
+      return status;
     case "failed_initial_payment":
     case "failed":
-      return {
-        description:
-          "Перший платіж не підтверджено. Спробуйте оплату ще раз через новий checkout.",
-        ctaLabel: "Спробувати ще раз",
-        ctaHref: "/",
-        ctaVariant: "primary",
-      };
-    case "expired":
-      return {
-        description:
-          "Checkout сесія прострочена. Створіть нову сесію оплати для продовження.",
-        ctaLabel: "Створити новий checkout",
-        ctaHref: "/",
-        ctaVariant: "primary",
-      };
-    case "awaiting_payment":
-      return {
-        description: "Очікуємо підтвердження першого платежу у monobank.",
-        ctaLabel: "Оновити статус",
-        ctaHref: "#refresh",
-        ctaVariant: "secondary",
-      };
+      return "failed";
     default:
-      return {
-        description: "Оновлюємо статус підписки та синхронізуємось із платіжним провайдером.",
-        ctaLabel: "Оновити статус",
-        ctaHref: "#refresh",
-        ctaVariant: "secondary",
-      };
+      return "unknown";
   }
+}
+
+/** Словник необовʼязковий: без нього повертається українська — мова за замовчуванням. */
+export function getResultStateUi(
+  status: BillingResultState,
+  t: Dict = DICT.ua,
+): ResultStateUi {
+  const key = stateKey(status);
+  const copy = t.states[key];
+  const shape = SHAPE[key];
+
+  return {
+    description: copy.description,
+    ctaLabel: copy.ctaLabel,
+    ctaHref: shape.href,
+    ctaVariant: shape.variant,
+  };
 }
 
 export function shouldStopPolling(status: BillingResultState): boolean {

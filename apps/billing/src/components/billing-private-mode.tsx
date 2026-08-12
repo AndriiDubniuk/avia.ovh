@@ -1,33 +1,53 @@
+"use client";
+
 import Link from "next/link";
 
+import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-chrome";
+import { Cockpit } from "@/components/cockpit";
+import { useHref, useLang } from "@/components/lang-provider";
+
+const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
+
+/**
+ * Екран показується, коли публічний checkout вимкнено.
+ * Користувачу потрібне тільки одне: як оплатити за персональним посиланням.
+ * Пояснення про режим і службові індикатори стану тут зайві.
+ */
 export function BillingPrivateMode() {
+  const { t } = useLang();
+  const href = useHref();
+
   return (
-    <main className="billing-shell min-h-screen">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-center px-6 py-10 lg:px-8">
-        <div className="rounded-[1.8rem] border border-black/10 bg-white/80 p-8">
-          <p className="text-xs uppercase tracking-[0.24em] text-black/45">AVIA Billing</p>
-          <h1 className="display mt-3 text-4xl font-semibold sm:text-5xl">
-            Оплати тимчасово у приватному режимі
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-black/70">
-            Публічне оформлення підписки тимчасово вимкнено. Для оплати використовуйте персональне посилання, яке ви отримали напряму.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href="/portal"
-              className="rounded-full border border-black/10 bg-white px-6 py-3 text-sm font-semibold hover:-translate-y-0.5"
-            >
-              Мої підписки
-            </Link>
-            <Link
-              href="/"
-              className="rounded-full bg-black px-6 py-3 text-sm font-semibold text-white hover:-translate-y-0.5"
-            >
-              Оновити сторінку
-            </Link>
-          </div>
+    <>
+      <Cockpit sky="climb" />
+      <BillingTop />
+
+      <main className="bpage">
+        <BillingCrumb page={t.privateMode.crumb} />
+
+        <h1 className="huge">{t.privateMode.title}</h1>
+
+        <p className="sub">{t.privateMode.sub}</p>
+
+        <div className="actions" style={{ marginTop: 38 }}>
+          <Link className="cta" href={href("/portal")}>
+            {t.common.mySubs} →
+          </Link>
+          <a className="btn" href={`${landingUrl}/contact`}>
+            {t.privateMode.requestLink}
+          </a>
         </div>
-      </div>
-    </main>
+
+        <p className="note" style={{ marginTop: 28 }}>
+          {t.privateMode.noteBefore}
+          <a href={`${landingUrl}/contact`} style={{ color: "var(--haze)" }}>
+            <b>{t.privateMode.noteLink}</b>
+          </a>
+          {t.privateMode.noteAfter}
+        </p>
+      </main>
+
+      <BillingFooter />
+    </>
   );
 }

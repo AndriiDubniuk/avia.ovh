@@ -1,8 +1,19 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getResultStateUi, isCancelActionVisible, shouldStopPolling } from "@/components/result-state";
+
+import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-chrome";
+import { Cockpit } from "@/components/cockpit";
+import { useHref, useLang } from "@/components/lang-provider";
+import { userMessage } from "@/lib/errors";
+import { Reveal } from "@/components/reveal";
+import type { Dict } from "@/lib/i18n";
+import {
+  getResultStateUi,
+  isCancelActionVisible,
+  shouldStopPolling,
+} from "@/components/result-state";
 
 type CheckoutStatus = {
   checkoutId: string;
@@ -22,42 +33,55 @@ type CheckoutStatus = {
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("uk-UA", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 }
 
-function parseRequestError(error: unknown): string {
+/** Тон індикатора для кожного стану. */
+function statusTone(status: string) {
+  if (status === "active") return "ok";
+  if (status === "awaiting_payment") return "wait";
+  if (status === "cancelled") return "off";
+  if (["past_due", "suspended", "failed", "failed_initial_payment", "expired"].includes(status)) {
+    return "bad";
+  }
+  return "";
+}
+
+function parseRequestError(error: unknown, t: Dict): string {
   if (!(error instanceof Error)) {
-    return "Не вдалося отримати статус checkout.";
+    return t.status.errStatus;
   }
 
   const normalized = error.message.toLowerCase();
 
   if (normalized.includes("404") || normalized.includes("not found")) {
-    return "Checkout не знайдено. Перевірте посилання або створіть новий checkout.";
+    return t.status.errNotFound;
   }
 
   if (normalized.includes("invalid") || normalized.includes("identifier")) {
-    return "Некоректний ідентифікатор checkout. Відкрийте сторінку з валідним checkoutId.";
+    return t.status.errIncomplete;
   }
 
   if (normalized.includes("network") || normalized.includes("fetch")) {
-    return "Немає з'єднання з API. Перевірте, чи запущений backend, і спробуйте ще раз.";
+    return t.status.errNetwork;
   }
 
-  return error.message;
+  // Усе інше може бути технічним текстом бібліотеки — фільтруємо.
+  return userMessage(error, t.status.errStatus);
 }
 
 export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
+  const { t } = useLang();
+  const href = useHref();
   const [checkout, setCheckout] = useState<CheckoutStatus | null>(null);
   const [feedback, setFeedback] = useState("");
   const [isPolling, setIsPolling] = useState(true);
@@ -99,7 +123,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
 
   useEffect(() => {
     if (!checkoutId) {
-      setFeedback("Не передано ідентифікатор checkout.");
+      setFeedback(t.status.errIncomplete);
       setIsPolling(false);
       return;
     }
@@ -114,7 +138,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
           return;
         }
 
-        setFeedback(parseRequestError(error));
+        setFeedback(parseRequestError(error, t));
         setIsPolling(false);
       }
     }
@@ -131,7 +155,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
           return;
         }
 
-        setFeedback(parseRequestError(error));
+        setFeedback(parseRequestError(error, t));
         setIsPolling(false);
       });
     }, 6000);
@@ -143,7 +167,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
         window.clearInterval(intervalRef.current);
       }
     };
-  }, [checkoutId, fetchStatus, isPolling]);
+  }, [checkoutId, fetchStatus, isPolling, t]);
 
   async function onRefresh() {
     setIsRefreshing(true);
@@ -153,7 +177,7 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
       await fetchStatus(true);
       setIsPolling(true);
     } catch (error) {
-      setFeedback(parseRequestError(error));
+      setFeedback(parseRequestError(error, t));
     } finally {
       setIsRefreshing(false);
     }
@@ -183,126 +207,126 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
         throw new Error(
           data && "message" in data && data.message
             ? data.message
-            : "Не вдалося скасувати автопродовження.",
+            : t.status.errCancel,
         );
       }
 
       setCheckout(data as CheckoutStatus);
       setIsPolling(false);
-      setFeedback("Автопродовження скасовано. Нових списань більше не буде.");
+      setFeedback(t.status.cancelled);
     } catch (error) {
-      setFeedback(parseRequestError(error));
+      setFeedback(parseRequestError(error, t));
     } finally {
       setIsCancelling(false);
     }
   }
 
-  const statusUi = getResultStateUi(checkout?.status ?? "unknown");
+  const statusUi = getResultStateUi(checkout?.status ?? "unknown", t);
   const cancelVisible = checkout
     ? isCancelActionVisible(checkout.status, checkout.canCancel)
     : false;
 
   return (
-    <main className="billing-shell min-h-screen">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-10 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-black/45">AVIA Billing</p>
-            <h1 className="display mt-3 text-4xl font-semibold sm:text-5xl">Статус підписки</h1>
+    <>
+      <Cockpit sky="climb" />
+      <BillingTop />
+
+      <main className="bpage">
+        <BillingCrumb page={t.status.crumb} />
+
+        <Reveal>
+          <div className="eyebrow">{t.status.eyebrow}</div>
+          <h1 className="huge">{t.status.title}</h1>
+        </Reveal>
+
+        <Reveal>
+          <div className="panel mt6">
+            <p className="ptag">{t.status.currentTag}</p>
+            <h3 style={{ fontSize: "clamp(26px,3.4vw,46px)" }}>
+              {checkout?.planName ?? t.status.loadingPlan}
+            </h3>
+            {checkout ? (
+              <div
+                className={`status ${statusTone(checkout.status)}`}
+                style={{ marginBottom: 16 }}
+              >
+                {checkout.status}
+              </div>
+            ) : null}
+            <p style={{ fontSize: 16, maxWidth: 760 }}>{statusUi.description}</p>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <Link
-              href="/"
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
-            >
-              Оформити ще одну
-            </Link>
-            <Link
-              href={landingUrl}
-              className="rounded-full border border-black/10 bg-white/70 px-5 py-3 hover:-translate-y-0.5"
-            >
-              На головну
-            </Link>
-          </div>
-        </header>
+        </Reveal>
 
-        <section className="grid flex-1 gap-6 py-10">
-          <div className="rounded-[2rem] border border-black/10 bg-[#151515] p-6 text-white shadow-[0_28px_90px_-60px_rgba(0,0,0,0.65)] sm:p-7">
-            <p className="text-sm uppercase tracking-[0.24em] text-white/45">Поточний стан</p>
-            <h2 className="display mt-4 text-4xl font-semibold">
-              {checkout?.planName ?? "Завантажуємо checkout..."}
-            </h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-white/72">{statusUi.description}</p>
-          </div>
+        {feedback ? <p className="alert mt6">{feedback}</p> : null}
 
-          {feedback ? (
-            <div className="rounded-[1.4rem] border border-[var(--danger)]/18 bg-[var(--danger)]/6 px-5 py-4 text-sm text-[var(--danger)]">
-              {feedback}
-            </div>
-          ) : null}
+        {!checkout ? <p className="note mt6">{t.status.loadingHint}</p> : null}
 
-          {!checkout ? (
-            <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 text-sm text-black/60">
-              Завантажуємо стан checkout. Якщо дані не з&apos;являються, натисніть &quot;Оновити
-              статус&quot;.
-            </div>
-          ) : null}
-
-          {checkout ? (
-            <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-              <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 shadow-[0_24px_70px_-55px_rgba(0,0,0,0.45)]">
-                <p className="text-sm uppercase tracking-[0.22em] text-black/45">Технічна інформація</p>
-                <div className="mt-5 grid gap-3">
+        {checkout ? (
+          <div className="split split-l">
+            <Reveal>
+              <div className="panel">
+                <p className="ptag">{t.status.detailsTag}</p>
+                <div className="stack" style={{ marginTop: 20 }}>
                   {[
-                    ["Статус checkout", checkout.status],
-                    ["Статус у monobank", checkout.monobankStatus ?? "—"],
-                    ["Старт підписки", formatDate(checkout.startDate ?? null)],
-                    ["Наступне списання", formatDate(checkout.nextChargeDate ?? null)],
-                    ["Кінець/скасування", formatDate(checkout.endDate ?? null)],
+                    [t.common.status, checkout.status],
+                    [t.status.monoStatus, checkout.monobankStatus ?? "—"],
+                    [t.status.start, formatDate(checkout.startDate ?? null, t.locale)],
+                    [
+                      t.common.nextCharge,
+                      formatDate(checkout.nextChargeDate ?? null, t.locale),
+                    ],
+                    [t.status.end, formatDate(checkout.endDate ?? null, t.locale)],
                   ].map(([label, value]) => (
-                    <div
-                      key={label}
-                      className="rounded-[1.25rem] border border-black/8 bg-black/[0.03] px-4 py-4"
-                    >
-                      <p className="text-xs uppercase tracking-[0.2em] text-black/45">{label}</p>
-                      <p className="mt-2 break-words text-base font-medium">{value}</p>
+                    <div key={label} className="kv">
+                      <p className="k">{label}</p>
+                      <p
+                        className="v"
+                        style={{ fontFamily: "var(--mono)", fontSize: 13, fontWeight: 400 }}
+                      >
+                        {value}
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
+            </Reveal>
 
-              <div className="rounded-[1.8rem] border border-black/10 bg-[rgba(255,251,245,0.88)] p-6 shadow-[0_24px_70px_-55px_rgba(0,0,0,0.38)]">
-                <p className="text-sm uppercase tracking-[0.22em] text-black/45">Дії</p>
-                <div className="mt-5 grid gap-3">
-                  <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm leading-6 text-black/70">
-                    <p className="font-medium text-black">Рекомендовано для поточного стану</p>
-                    <p className="mt-2">{statusUi.description}</p>
-                  </div>
+            <Reveal delay={80}>
+              <div className="panel">
+                <p className="ptag">{t.status.actionsTag}</p>
 
-                  <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-black/45">Успішні списання</p>
-                    <p className="mt-2 text-2xl font-semibold">{checkout.totalPaid ?? 0}</p>
+                <div className="grid2" style={{ marginTop: 20 }}>
+                  <div className="kv">
+                    <p className="k">{t.status.paid}</p>
+                    <p
+                      className="v"
+                      style={{ fontSize: 30, fontWeight: 800, color: "var(--signal)" }}
+                    >
+                      {checkout.totalPaid ?? 0}
+                    </p>
                   </div>
-                  <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.2em] text-black/45">Невдалі списання</p>
-                    <p className="mt-2 text-2xl font-semibold">{checkout.totalFailed ?? 0}</p>
-                  </div>
-                  <div className="rounded-[1.3rem] border border-black/8 bg-white/80 px-4 py-4 text-sm leading-6 text-black/68">
-                    {checkout.cancellationDesc
-                      ? checkout.cancellationDesc
-                      : "Якщо підписка активна або очікує перший платіж, автопродовження можна скасувати тут."}
+                  <div className="kv">
+                    <p className="k">{t.status.failed}</p>
+                    <p className="v" style={{ fontSize: 30, fontWeight: 800 }}>
+                      {checkout.totalFailed ?? 0}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-3" id="refresh">
+                <p
+                  className={`alert ${statusTone(checkout.status) === "ok" ? "alert-ok" : ""}`}
+                  style={{ marginTop: 20 }}
+                >
+                  {checkout.cancellationDesc
+                    ? checkout.cancellationDesc
+                    : t.status.cancelHint}
+                </p>
+
+                <div className="actions mt6" id="refresh">
                   {statusUi.ctaHref !== "#refresh" ? (
                     <Link
                       href={statusUi.ctaHref}
-                      className={`w-full rounded-full px-6 py-4 text-center text-sm font-semibold sm:w-auto ${
-                        statusUi.ctaVariant === "primary"
-                          ? "bg-black text-white hover:-translate-y-0.5"
-                          : "border border-black/10 bg-white hover:-translate-y-0.5"
-                      }`}
+                      className={statusUi.ctaVariant === "primary" ? "cta" : "btn"}
                     >
                       {statusUi.ctaLabel}
                     </Link>
@@ -312,9 +336,9 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
                     type="button"
                     onClick={onRefresh}
                     disabled={isRefreshing}
-                    className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-sm font-semibold hover:-translate-y-0.5 disabled:opacity-60 sm:w-auto"
+                    className="btn"
                   >
-                    {isRefreshing ? "Оновлюємо..." : "Оновити статус"}
+                    {isRefreshing ? t.status.refreshing : t.status.refresh}
                   </button>
 
                   {cancelVisible ? (
@@ -322,30 +346,56 @@ export function SubscriptionStatus({ checkoutId }: { checkoutId: string }) {
                       type="button"
                       onClick={onCancel}
                       disabled={isCancelling}
-                      className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/45 sm:w-auto"
+                      className="btn"
                     >
                       {isCancelling
-                        ? "Скасовуємо..."
+                        ? t.common.cancelling
                         : checkout.status === "awaiting_payment"
-                          ? "Скасувати checkout"
-                          : "Скасувати автопродовження"}
+                          ? t.status.cancelPayment
+                          : t.common.cancelAuto}
                     </button>
                   ) : null}
 
                   {checkout.subscriptionId ? (
                     <Link
-                      href={`/subscriptions/${encodeURIComponent(checkout.subscriptionId)}`}
-                      className="w-full rounded-full border border-black/10 bg-white px-6 py-4 text-center text-sm font-semibold hover:-translate-y-0.5 sm:w-auto"
+                      href={href(`/subscriptions/${encodeURIComponent(checkout.subscriptionId)}`)}
+                      className="ghost"
                     >
-                      Перейти до підписки
+                      {t.status.manage}
                     </Link>
                   ) : null}
                 </div>
               </div>
+            </Reveal>
+          </div>
+        ) : null}
+
+        <section className="sec">
+          <Reveal>
+            <div className="sec-head">
+              <h2 className="mid">
+                {t.status.lifecycleTitle[0]}
+                <br />
+                {t.status.lifecycleTitle[1]}
+              </h2>
+              <span className="tag">{t.status.lifecycleTag}</span>
             </div>
-          ) : null}
+          </Reveal>
+          <Reveal>
+            <div className="plan" style={{ width: "100%" }}>
+              {t.status.lifecycle.map((phase) => (
+                <div key={phase.ph} className="phase">
+                  <div className="ph">{phase.ph}</div>
+                  <h3>{phase.title}</h3>
+                  <p>{phase.text}</p>
+                </div>
+              ))}
+            </div>
+          </Reveal>
         </section>
-      </div>
-    </main>
+      </main>
+
+      <BillingFooter />
+    </>
   );
 }

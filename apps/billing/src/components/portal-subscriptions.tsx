@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-chrome";
+import { Cockpit } from "@/components/cockpit";
+import { useHref, useLang } from "@/components/lang-provider";
+import { userMessage } from "@/lib/errors";
+import { Reveal } from "@/components/reveal";
+
 type PortalSubscriptionItem = {
   subscription_id: string;
   status: string;
@@ -16,26 +22,35 @@ type PortalSubscriptionItem = {
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("uk-UA", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 }
 
-function formatAmount(minor: number, currency: string) {
-  return new Intl.NumberFormat("uk-UA", {
+function formatAmount(minor: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
   }).format(minor / 100);
 }
 
+function statusTone(status: string) {
+  if (status === "active") return "ok";
+  if (status === "cancelled") return "off";
+  if (["past_due", "suspended", "failed"].includes(status)) return "bad";
+  return "wait";
+}
+
 export function PortalSubscriptions() {
+  const { t } = useLang();
+  const href = useHref();
   const [items, setItems] = useState<PortalSubscriptionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState("");
@@ -54,114 +69,129 @@ export function PortalSubscriptions() {
         | null;
 
       if (!response.ok) {
-        throw new Error(data?.message ?? "Не вдалося отримати список підписок.");
+        throw new Error(data?.message ?? t.subs.errLoad);
       }
 
       setItems(Array.isArray(data?.items) ? data.items : []);
     } catch (error) {
-      setFeedback(
-        error instanceof Error
-          ? error.message
-          : "Помилка завантаження списку підписок.",
-      );
+      setFeedback(userMessage(error, t.subs.errLoadRetry));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+    // Список тягнеться заново при зміні мови — це звичайний GET,
+    // зате запасне повідомлення завжди мовою інтерфейсу.
+  }, [t]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  const activeCount = items.filter((item) => item.status === "active").length;
+
   return (
-    <main className="billing-shell min-h-screen">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-10 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-black/45">AVIA Billing Portal</p>
-            <h1 className="display mt-3 text-4xl font-semibold sm:text-5xl">Мої підписки</h1>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => void load()}
-              className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold hover:-translate-y-0.5"
-            >
-              Оновити
+    <>
+      <Cockpit sky="climb" />
+      <BillingTop />
+
+      <main className="bpage">
+        <BillingCrumb page={t.subs.crumb} />
+
+        <Reveal>
+          <div className="eyebrow">{t.subs.eyebrow}</div>
+          <h1 className="huge">{t.subs.title}</h1>
+          <p className="sub">{t.subs.sub}</p>
+
+          <div className="actions" style={{ marginTop: 20 }}>
+            <button type="button" className="btn" onClick={() => void load()}>
+              {t.common.refresh}
             </button>
-            <Link
-              href="/portal"
-              className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold hover:-translate-y-0.5"
-            >
-              Інший email
+            <Link href={href("/portal")} className="btn">
+              {t.subs.otherEmail}
             </Link>
           </div>
-        </header>
+        </Reveal>
 
-        <section className="grid gap-4 py-10">
-          {feedback ? (
-            <div className="rounded-[1.4rem] border border-[var(--danger)]/18 bg-[var(--danger)]/6 px-5 py-4 text-sm text-[var(--danger)]">
-              {feedback}
+        {!isLoading && items.length > 0 ? (
+          <Reveal>
+            <div className="grid2 mt8">
+              <div className="kv">
+                <p className="k">{t.subs.active}</p>
+                <p className="v" style={{ fontSize: 30, fontWeight: 800, color: "var(--signal)" }}>
+                  {activeCount}
+                </p>
+              </div>
+              <div className="kv">
+                <p className="k">{t.subs.total}</p>
+                <p className="v" style={{ fontSize: 30, fontWeight: 800 }}>
+                  {items.length}
+                </p>
+              </div>
             </div>
-          ) : null}
+          </Reveal>
+        ) : null}
 
-          {isLoading ? (
-            <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 text-sm text-black/60">
-              Завантажуємо підписки...
-            </div>
-          ) : null}
+        {feedback ? <p className="alert mt6">{feedback}</p> : null}
 
-          {!isLoading && !feedback && items.length === 0 ? (
-            <div className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 text-sm text-black/68">
-              Для цього email ще немає активних або історичних підписок.
-            </div>
-          ) : null}
+        {isLoading ? <p className="note mt6">{t.subs.loading}</p> : null}
 
-          {!isLoading && items.length > 0
-            ? items.map((item) => (
-                <article
-                  key={item.subscription_id}
-                  className="rounded-[1.8rem] border border-black/10 bg-white/78 p-6 shadow-[0_24px_70px_-55px_rgba(0,0,0,0.45)]"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
+        {!isLoading && !feedback && items.length === 0 ? (
+          <p className="empty">{t.subs.empty}</p>
+        ) : null}
+
+        {!isLoading && items.length > 0
+          ? items.map((item, index) => (
+              <Reveal key={item.subscription_id} delay={index * 50}>
+                <article className="sub-card">
+                  <div className="head">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.22em] text-black/45">Subscription</p>
-                      <p className="mt-2 break-all font-mono text-sm">{item.subscription_id}</p>
+                      <p className="ptag">{t.subs.card}</p>
+                      <p className="sid">{item.subscription_id}</p>
                     </div>
-                    <div className="rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-sm font-medium">
-                      {item.status}
+                    <div className={`status ${statusTone(item.status)}`}>{item.status}</div>
+                  </div>
+
+                  <div className="grid4" style={{ marginTop: 22 }}>
+                    <div className="kv">
+                      <p className="k">{t.common.amount}</p>
+                      <p className="v">
+                        {formatAmount(item.amount_minor, item.currency, t.locale)}
+                      </p>
+                    </div>
+                    <div className="kv">
+                      <p className="k">{t.common.interval}</p>
+                      <p className="v" style={{ fontFamily: "var(--mono)", fontSize: 13 }}>
+                        {item.interval}
+                      </p>
+                    </div>
+                    <div className="kv">
+                      <p className="k">{t.common.nextCharge}</p>
+                      <p className="v" style={{ fontFamily: "var(--mono)", fontSize: 13 }}>
+                        {formatDate(item.next_charge_at, t.locale)}
+                      </p>
+                    </div>
+                    <div className="kv">
+                      <p className="k">{t.common.cancelledAt}</p>
+                      <p className="v" style={{ fontFamily: "var(--mono)", fontSize: 13 }}>
+                        {formatDate(item.cancelled_at, t.locale)}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatItem label="Сума" value={formatAmount(item.amount_minor, item.currency)} />
-                    <StatItem label="Інтервал" value={item.interval} />
-                    <StatItem label="Наступне списання" value={formatDate(item.next_charge_at)} />
-                    <StatItem label="Скасовано" value={formatDate(item.cancelled_at)} />
-                  </div>
-
-                  <div className="mt-5">
+                  <div className="actions" style={{ marginTop: 24 }}>
                     <Link
-                      href={`/portal/subscriptions/${encodeURIComponent(item.subscription_id)}`}
-                      className="inline-flex w-full justify-center rounded-full bg-black px-6 py-3 text-sm font-semibold text-white hover:-translate-y-0.5 sm:w-auto"
+                      href={href(`/portal/subscriptions/${encodeURIComponent(item.subscription_id)}`)}
+                      className="cta"
                     >
-                      Відкрити деталі
+                      {t.subs.open}
                     </Link>
                   </div>
                 </article>
-              ))
-            : null}
-        </section>
-      </div>
-    </main>
-  );
-}
+              </Reveal>
+            ))
+          : null}
+      </main>
 
-function StatItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.2rem] border border-black/8 bg-black/[0.03] px-4 py-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-black/45">{label}</p>
-      <p className="mt-2 text-base font-medium">{value}</p>
-    </div>
+      <BillingFooter />
+    </>
   );
 }

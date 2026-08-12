@@ -7,6 +7,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      // Службовий JSON-ендпоїнт для health-check. Віддає 200 і без заборони
+      // потрапляє в індекс як «тонка» сторінка без контенту й метаданих.
+      disallow: ["/health"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

@@ -3,7 +3,7 @@ import { getResultStateUi, isCancelActionVisible } from "@/components/result-sta
 describe("result state UI", () => {
   it("renders past_due with renewal CTA", () => {
     const state = getResultStateUi("past_due");
-    expect(state.ctaLabel).toBe("Оформити нову оплату");
+    expect(state.ctaLabel).toBe("Оплатити заново");
     expect(state.ctaHref).toBe("/");
   });
 

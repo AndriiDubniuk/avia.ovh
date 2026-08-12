@@ -7,8 +7,8 @@ describe("subscription management", () => {
       <SubscriptionManagement subscriptionId="sub-test-123" />,
     );
 
-    expect(markup).toContain("AVIA Billing");
-    expect(markup).toContain("Subscription ID");
+    expect(markup).toContain("AVIA DIGITAL");
+    expect(markup).toContain("Номер підписки");
     expect(markup).toContain("sub-test-123");
   });
 
@@ -32,6 +32,6 @@ describe("subscription management", () => {
     expect(summary).toHaveLength(3);
     expect(summary[0]).toContain("2");
     expect(summary[1]).toContain("1");
-    expect(summary[2]).toContain("retry_count: 0");
+    expect(summary[2]).toContain("Повторних спроб: 0");
   });
 });

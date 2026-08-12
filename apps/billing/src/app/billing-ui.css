@@ -1,0 +1,589 @@
+/* ============================================================
+   BILLING — компоненти платіжних екранів поверх ALTITUDE
+   ============================================================ */
+
+.bpage {
+  position: relative;
+  z-index: 20;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 130px 8vw 120px;
+}
+.bpage-narrow {
+  max-width: 920px;
+}
+.bpage-wide {
+  max-width: 1320px;
+}
+.bcenter {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ---------- статус ---------- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid var(--line-hi);
+  padding: 9px 16px;
+  color: var(--haze);
+}
+.status:before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.status.ok {
+  color: var(--signal);
+  border-color: rgba(121, 227, 196, 0.4);
+}
+.status.ok:before {
+  background: var(--signal);
+  box-shadow: 0 0 10px var(--signal);
+}
+.status.wait {
+  color: var(--gold);
+  border-color: rgba(245, 194, 75, 0.4);
+}
+.status.wait:before {
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.status.bad {
+  color: var(--rose);
+  border-color: rgba(255, 122, 90, 0.4);
+}
+.status.bad:before {
+  background: var(--rose);
+  box-shadow: 0 0 10px var(--rose);
+}
+.status.off {
+  color: var(--muted);
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ---------- вибір тарифу ---------- */
+.plan-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  padding: 26px;
+  cursor: none;
+  transition: 0.3s;
+  position: relative;
+  background: rgba(10, 16, 38, 0.32);
+  color: inherit;
+  font: inherit;
+}
+.plan-opt + .plan-opt {
+  margin-top: 16px;
+}
+.plan-opt:hover {
+  border-color: rgba(121, 227, 196, 0.35);
+  transform: translateY(-2px);
+}
+.plan-opt[data-on="true"] {
+  border-color: var(--signal);
+  background: rgba(121, 227, 196, 0.07);
+}
+.plan-opt[data-on="true"]:before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 11px;
+  height: 11px;
+  border-top: 2px solid var(--signal);
+  border-left: 2px solid var(--signal);
+}
+.plan-opt .top {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.plan-opt .badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--haze);
+  padding: 6px 12px;
+}
+.plan-opt[data-on="true"] .badge {
+  background: var(--signal);
+}
+.plan-opt h3 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-size: clamp(22px, 2.4vw, 31px);
+  margin: 16px 0 10px;
+}
+.plan-opt .pdesc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(244, 241, 234, 0.6);
+  max-width: 440px;
+}
+.plan-opt .price {
+  font-family: var(--mono);
+  font-size: 16px;
+  color: var(--signal);
+  text-align: right;
+  white-space: nowrap;
+}
+.plan-opt .price small {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+.plan-opt .feat {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+.plan-opt .feat div {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--haze);
+  padding-left: 18px;
+  position: relative;
+  letter-spacing: 0.02em;
+}
+.plan-opt .feat div:before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--signal);
+  opacity: 0.7;
+}
+
+/* ---------- чипи ---------- */
+.chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+.chip {
+  border: 1px solid var(--line);
+  padding: 15px 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.75;
+  letter-spacing: 0.04em;
+  color: var(--haze);
+}
+
+/* ---------- квиток персональної оплати ---------- */
+.paycard {
+  border: 1px solid rgba(121, 227, 196, 0.3);
+  background: rgba(121, 227, 196, 0.045);
+}
+.paycard .stub {
+  padding: 26px 28px;
+  border-bottom: 1px dashed rgba(207, 232, 228, 0.22);
+}
+.paycard .stub:last-child {
+  border-bottom: none;
+}
+.paycard .tk {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.paycard .tv {
+  margin-top: 9px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.paycard .tv.mono {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--haze);
+  letter-spacing: 0.04em;
+  word-break: break-all;
+}
+.paycard .tv.big {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--signal);
+}
+
+/* ---------- історія списань ---------- */
+.acc {
+  border: 1px solid var(--line);
+  margin-top: 12px;
+}
+.acc > summary {
+  cursor: none;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 17px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--haze);
+  transition: 0.25s;
+}
+.acc > summary::-webkit-details-marker {
+  display: none;
+}
+.acc > summary:hover {
+  background: rgba(121, 227, 196, 0.05);
+  color: var(--signal);
+}
+.acc[open] > summary {
+  border-bottom: 1px solid var(--line);
+  color: var(--signal);
+}
+.att {
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(207, 232, 228, 0.07);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.95;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+.att:last-child {
+  border-bottom: none;
+}
+.att b {
+  color: var(--haze);
+  font-weight: 400;
+}
+.att .amt {
+  color: var(--signal);
+}
+.att .fail {
+  color: var(--rose);
+}
+
+/* ---------- підписки в кабінеті ---------- */
+.sub-card {
+  border: 1px solid var(--line);
+  padding: 26px;
+  margin-top: 16px;
+  transition: 0.3s;
+  background: rgba(10, 16, 38, 0.32);
+}
+.sub-card:hover {
+  border-color: rgba(121, 227, 196, 0.35);
+  transform: translateY(-2px);
+}
+.sub-card .head {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.sid {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--haze);
+  word-break: break-all;
+  margin-top: 10px;
+}
+.empty {
+  border: 1px dashed rgba(207, 232, 228, 0.2);
+  padding: 44px 30px;
+  text-align: center;
+  margin-top: 20px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  line-height: 2;
+}
+
+/* ---------- sandbox ---------- */
+.code {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--haze);
+  background: rgba(4, 5, 10, 0.6);
+  border: 1px solid var(--line);
+  padding: 18px 20px;
+  white-space: pre;
+  overflow-x: auto;
+  letter-spacing: 0.02em;
+}
+.code .key {
+  color: var(--signal);
+}
+.code .str {
+  color: var(--gold);
+}
+.out {
+  border: 1px solid var(--line);
+  margin-top: 16px;
+}
+.out .oh {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.out .code {
+  border: none;
+  margin: 0;
+}
+.devmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid rgba(245, 194, 75, 0.35);
+  background: rgba(245, 194, 75, 0.06);
+  padding: 9px 16px;
+}
+.devmark:before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold);
+}
+
+/* ---------- сітки ---------- */
+.split {
+  display: grid;
+  gap: 34px;
+  margin-top: 40px;
+  align-items: start;
+}
+.split-2 {
+  grid-template-columns: 1fr 1fr;
+}
+.split-l {
+  grid-template-columns: 0.9fr 1.1fr;
+}
+.split-r {
+  grid-template-columns: 1.05fr 0.95fr;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.stack {
+  display: grid;
+  gap: 12px;
+}
+.mt6 {
+  margin-top: 24px;
+}
+.mt8 {
+  margin-top: 32px;
+}
+
+@media (max-width: 980px) {
+  .split-2,
+  .split-l,
+  .split-r {
+    grid-template-columns: 1fr;
+  }
+  .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .chips {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 700px) {
+  .bpage {
+    padding: 110px 6vw 90px;
+  }
+  .grid2,
+  .grid3,
+  .grid4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- sandbox utilities ---------- */
+.sbx-input {
+  width: 100%;
+  background: rgba(10, 16, 38, 0.5);
+  border: 1px solid var(--line);
+  color: var(--runway);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 12px 14px;
+  outline: none;
+  border-radius: 0;
+  cursor: none;
+  transition: 0.22s;
+}
+.sbx-input:focus {
+  border-color: var(--signal);
+  background: rgba(121, 227, 196, 0.05);
+}
+.sbx-json {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.7;
+  min-height: 190px;
+  resize: vertical;
+}
+.sbx-mini {
+  padding: 12px 20px;
+  font-size: 11px;
+  width: auto;
+}
+.sbx-muted {
+  color: var(--muted);
+}
+
+/* ============================================================
+   КОМПОЗИЦІЯ ПЛАТІЖНИХ ЕКРАНІВ
+   Billing — робочий інтерфейс: статус, перша картка й головна дія
+   мають бути видимі без прокрутки. Стиль не змінено, лише
+   масштаб заголовка та вертикальний ритм.
+   ============================================================ */
+
+.bpage {
+  /* Верхній відступ трохи стиснуто, щоб збільшені інтервали всередині
+     не виштовхнули головну кнопку за межі першого екрана на 1366x768. */
+  padding-top: 90px;
+  padding-bottom: 88px;
+  /* Той самий обмежений бічний відступ, що й на сайті */
+  padding-inline: clamp(22px, 8vw, 56px);
+}
+.bpage .huge {
+  font-size: clamp(36px, 4.2vw, 62px);
+  line-height: 1;
+  /* Довгі українські слова не мають вилазити за межі колонки */
+  overflow-wrap: break-word;
+}
+.bpage .crumb {
+  margin-bottom: 22px;
+}
+/* Той самий ритм, що й на сайті: заголовок → опис → робочий блок. */
+.bpage .sub {
+  margin-top: 24px;
+}
+.bpage .clr {
+  margin-top: 24px;
+}
+.bpage .sec {
+  margin-top: 76px;
+}
+
+/* Шапка екрана в два стовпці: заголовок ліворуч, стан і сценарій праворуч. */
+@media (min-width: 1100px) {
+  .bhero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 44px;
+    align-items: start;
+  }
+  .bhero .clr,
+  .bhero .status {
+    margin-top: 0;
+  }
+  .bhero .sub {
+    margin-top: 0;
+    max-width: none;
+  }
+}
+
+/* Робочі блоки підтягуються ближче до шапки */
+.split {
+  margin-top: 40px;
+}
+.chips {
+  margin-top: 22px;
+}
+.mt8 {
+  margin-top: 34px;
+}
+.mt6 {
+  margin-top: 24px;
+}
+.panel {
+  padding: 24px 26px 26px;
+}
+.plan-opt {
+  padding: 20px 22px;
+}
+.plan-opt + .plan-opt {
+  margin-top: 12px;
+}
+.plan-opt h3 {
+  margin: 12px 0 8px;
+}
+.plan-opt .feat {
+  margin-top: 14px;
+}
+.sub-card {
+  padding: 22px 24px;
+  margin-top: 12px;
+}
+.paycard .stub {
+  padding: 18px 22px;
+}
+
+@media (max-width: 720px) {
+  .bpage {
+    padding-top: 84px;
+    padding-bottom: 68px;
+  }
+  .bpage .sec {
+    margin-top: 58px;
+  }
+}

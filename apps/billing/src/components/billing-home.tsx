@@ -1,7 +1,17 @@
-﻿"use client";
+"use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import {
+  BillingCrumb,
+  BillingFooter,
+  BillingTop,
+  Consent,
+} from "@/components/billing-chrome";
+import { Cockpit } from "@/components/cockpit";
+import { useLang } from "@/components/lang-provider";
+import { userMessage } from "@/lib/errors";
+import { Reveal } from "@/components/reveal";
 
 type BillingPlan = {
   code: string;
@@ -22,9 +32,9 @@ type PlansResponse = {
 };
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api";
-const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
 
 export function BillingHome() {
+  const { t } = useLang();
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [selectedPlanCode, setSelectedPlanCode] = useState("");
   const [formState, setFormState] = useState({
@@ -47,7 +57,7 @@ export function BillingHome() {
         const data = (await response.json()) as PlansResponse;
 
         if (!response.ok) {
-          throw new Error("Не вдалося завантажити доступні підписки.");
+          throw new Error(t.home.errPlans);
         }
 
         if (!isMounted) {
@@ -61,11 +71,7 @@ export function BillingHome() {
           return;
         }
 
-        setFeedback(
-          error instanceof Error
-            ? error.message
-            : "Не вдалося завантажити платіжну сторінку.",
-        );
+        setFeedback(userMessage(error, t.home.errPage));
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -78,7 +84,7 @@ export function BillingHome() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   const selectedPlan =
     plans.find((plan) => plan.code === selectedPlanCode) ?? plans[0];
@@ -87,7 +93,7 @@ export function BillingHome() {
     event.preventDefault();
 
     if (!selectedPlanCode) {
-      setFeedback("Оберіть підписку перед переходом до оплати.");
+      setFeedback(t.home.errPick);
       return;
     }
 
@@ -111,272 +117,195 @@ export function BillingHome() {
         | null;
 
       if (!response.ok || !data?.paymentUrl) {
-        throw new Error(
-          data?.message ??
-            "Не вдалося створити checkout. Спробуйте ще раз трохи пізніше.",
-        );
+        throw new Error(data?.message ?? t.home.errCheckout);
       }
 
       window.location.href = data.paymentUrl;
     } catch (error) {
-      setFeedback(
-        error instanceof Error ? error.message : "Сталася помилка під час оплати.",
-      );
+      setFeedback(userMessage(error, t.home.errCheckoutFallback));
       setIsSubmitting(false);
     }
   }
 
   return (
-    <main className="billing-shell min-h-screen">
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-10 lg:px-8">
-        <header className="flex flex-col gap-4 border-b border-black/10 pb-6 md:flex-row md:items-center md:justify-between">
+    <>
+      <Cockpit sky="climb" />
+      <BillingTop />
+
+      <main className="bpage bpage-wide">
+        <BillingCrumb page={t.home.crumb} />
+
+        <Reveal>
+          <div className="bhero">
+            <div>
+              <div className="eyebrow">{t.home.eyebrow}</div>
+              <h1 className="huge">
+                {t.home.title[0]}
+                <br />
+                {t.home.title[1]}
+              </h1>
+              <p className="sub">{t.home.sub}</p>
+            </div>
+            <p className="clr">
+              {t.home.clr[0]}
+              <br />
+              {t.home.clr[1]}
+              <br />
+              <b>{t.home.clr[2]}</b>
+            </p>
+          </div>
+        </Reveal>
+
+        <Reveal>
+          <div className="chips">
+            {t.home.chips.map((chip) => (
+              <div key={chip} className="chip">
+                {chip}
+              </div>
+            ))}
+          </div>
+        </Reveal>
+
+        <div className="split split-r">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.28em] text-black/55">
-              AVIA Billing
-            </p>
-            <h1 className="display mt-3 text-4xl font-semibold sm:text-5xl">
-              Оформіть підписку на Avia.
-            </h1>
-          </div>
-          <div className="flex w-full flex-wrap gap-3 text-sm md:w-auto">
-            <Link
-              href={landingUrl}
-              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
-            >
-              Повернутися на avia.ovh
-            </Link>
-            <Link
-              href={`${landingUrl}/offer`}
-              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
-            >
-              Оферта
-            </Link>
-            <Link
-              href={`${landingUrl}/privacy`}
-              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
-            >
-              Конфіденційність
-            </Link>
-            <Link
-              href="/portal"
-              className="w-full rounded-full border border-black/10 bg-white/70 px-5 py-3 text-center hover:-translate-y-0.5 sm:w-auto"
-            >
-              Мої підписки
-            </Link>
-          </div>
-        </header>
+            <Reveal>
+              <div className="sec-head" style={{ marginBottom: 26 }}>
+                <h2 className="mid">
+                  {t.home.plansTitle[0]}
+                  <br />
+                  {t.home.plansTitle[1]}
+                </h2>
+                <span className="tag">
+                  {isLoading ? t.home.plansLoadingTag : t.home.plansTag(plans.length)}
+                </span>
+              </div>
+            </Reveal>
 
-        <section className="grid flex-1 gap-8 py-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-6">
-            <div className="rounded-[2rem] border border-black/10 bg-[#141414] p-7 text-white shadow-[0_28px_90px_-60px_rgba(0,0,0,0.65)]">
-              <p className="text-sm uppercase tracking-[0.24em] text-white/45">
-                Платіжний сценарій
-              </p>
-              <h2 className="display mt-4 text-4xl font-semibold">
-                Проста оплата. Автоматичне продовження.
-              </h2>
-              <p className="mt-4 max-w-xl text-base leading-7 text-white/70">
-                Оберіть зручний план, перейдіть до оплати через monobank і отримайте доступ одразу після першого платежу.
-              </p>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                {[
-                  "Оплата карткою, Apple Pay або Google Pay",
-                  "Щорічне автосписання через monobank",
-                  "Скасування без повернення в сапорт",
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[1.4rem] border border-white/10 bg-white/6 px-4 py-4 text-sm leading-6 text-white/82"
+            {isLoading ? (
+              <p className="note">{t.home.plansLoading}</p>
+            ) : (
+              plans.map((plan, index) => (
+                <Reveal key={plan.code} delay={index * 50}>
+                  <button
+                    type="button"
+                    className="plan-opt"
+                    data-on={plan.code === selectedPlanCode}
+                    onClick={() => setSelectedPlanCode(plan.code)}
                   >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.24em] text-black/45">
-                    Доступні підписки
-                  </p>
-                  <h2 className="display mt-2 text-3xl font-semibold">
-                    Обери свій тариф.
-                  </h2>
-                </div>
-              </div>
-
-              {isLoading ? (
-                <div className="rounded-[1.8rem] border border-black/10 bg-white/70 p-6 text-sm text-black/55">
-                  Завантажуємо підписки...
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {plans.map((plan) => {
-                    const isSelected = plan.code === selectedPlanCode;
-
-                    return (
-                      <button
-                        key={plan.code}
-                        type="button"
-                        onClick={() => setSelectedPlanCode(plan.code)}
-                        className={`rounded-[1.8rem] border p-6 text-left ${
-                          isSelected
-                            ? "border-black bg-[#fff8ef] shadow-[0_22px_70px_-55px_rgba(0,0,0,0.45)]"
-                            : "border-black/10 bg-white/72 hover:-translate-y-0.5"
-                        }`}
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div>
-                            <div className="inline-flex rounded-full bg-black px-3 py-1 text-xs font-medium tracking-[0.18em] text-white">
-                              {plan.badge}
-                            </div>
-                            <h3 className="display mt-4 text-3xl font-semibold">
-                              {plan.name}
-                            </h3>
-                            <p className="mt-3 max-w-2xl text-sm leading-6 text-black/70">
-                              {plan.description}
-                            </p>
-                          </div>
-                          <div className="w-full rounded-[1.4rem] border border-black/10 bg-black px-5 py-4 text-left text-white sm:w-auto sm:text-right">
-                            <p className="text-xs uppercase tracking-[0.24em] text-white/50">
-                              Ціна
-                            </p>
-                            <p className="mt-2 text-2xl font-semibold">{plan.priceLabel}</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-5 grid gap-2 md:grid-cols-2">
-                          {plan.features.map((feature) => (
-                            <div
-                              key={feature}
-                              className="rounded-[1.2rem] border border-black/8 bg-black/[0.03] px-4 py-3 text-sm leading-6 text-black/75"
-                            >
-                              {feature}
-                            </div>
-                          ))}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                    <span className="top">
+                      <span>
+                        <span className="badge">{plan.badge}</span>
+                        <h3>{plan.name}</h3>
+                        <span className="pdesc">{plan.description}</span>
+                      </span>
+                      <span className="price">{plan.priceLabel}</span>
+                    </span>
+                    <span className="feat">
+                      {plan.features.map((feature) => (
+                        <div key={feature}>{feature}</div>
+                      ))}
+                    </span>
+                  </button>
+                </Reveal>
+              ))
+            )}
           </div>
 
-          <div className="rounded-[2rem] border border-black/10 bg-[rgba(255,251,245,0.85)] p-6 shadow-[0_32px_90px_-60px_rgba(0,0,0,0.38)] sm:p-8">
-            <p className="text-sm uppercase tracking-[0.24em] text-black/45">
-              Оформлення
-            </p>
-            <h2 className="display mt-3 text-4xl font-semibold">
-             Оформлення підписки
-            </h2>
-            <p className="mt-4 text-base leading-7 text-black/70">
-              Після переходу в monobank ви підтвердите перший річний платіж. Далі
-              сторінка результату покаже статус, дату наступного списання й кнопку
-              скасування автоподовження.
-            </p>
+          <Reveal delay={80}>
+            <div className="panel">
+              <p className="ptag">{t.home.formTag}</p>
+              <h3>{t.home.formTitle}</h3>
+              <p>{t.home.formBody}</p>
 
-            {selectedPlan ? (
-              <div className="mt-6 rounded-[1.7rem] border border-black/10 bg-white/80 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.22em] text-black/45">
-                      Обрано
-                    </p>
-                    <h3 className="mt-2 text-2xl font-semibold">{selectedPlan.name}</h3>
-                  </div>
-                  <p className="break-words text-lg font-semibold">{selectedPlan.priceLabel}</p>
-                </div>
-                <p className="mt-4 text-sm leading-6 text-black/68">
-                  {selectedPlan.note}
-                </p>
-              </div>
-            ) : null}
-
-            <form className="mt-6 grid gap-4" onSubmit={onSubmit}>
-              <label className="grid gap-2 text-sm font-medium">
-                <span>Ім&apos;я або контактна особа</span>
-                <input
-                  required
-                  minLength={2}
-                  value={formState.customerName}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      customerName: event.target.value,
-                    }))
-                  }
-                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-black"
-                  placeholder="Наприклад, Андрій"
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-medium">
-                <span>Email</span>
-                <input
-                  required
-                  type="email"
-                  value={formState.customerEmail}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      customerEmail: event.target.value,
-                    }))
-                  }
-                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-black"
-                  placeholder="name@company.com"
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-medium">
-                <span>Компанія</span>
-                <input
-                  value={formState.companyName}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      companyName: event.target.value,
-                    }))
-                  }
-                  className="rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-black"
-                  placeholder="Необов'язково"
-                />
-              </label>
-
-
-              {feedback ? (
-                <div className="rounded-[1.2rem] border border-[var(--danger)]/18 bg-[var(--danger)]/6 px-4 py-3 text-sm text-[var(--danger)]">
-                  {feedback}
+              {selectedPlan ? (
+                <div
+                  className="kv"
+                  style={{
+                    marginTop: 24,
+                    borderColor: "rgba(121,227,196,.3)",
+                    background: "rgba(121,227,196,.05)",
+                  }}
+                >
+                  <p className="k">{t.home.chosen}</p>
+                  <p
+                    className="v"
+                    style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}
+                  >
+                    <span>{selectedPlan.name}</span>
+                    <span style={{ fontFamily: "var(--mono)", fontSize: 14, color: "var(--signal)" }}>
+                      {selectedPlan.priceLabel}
+                    </span>
+                  </p>
                 </div>
               ) : null}
 
-              <button
-                type="submit"
-                disabled={isSubmitting || !selectedPlanCode}
-                className="w-full rounded-full bg-black px-6 py-4 text-sm font-semibold text-white hover:-translate-y-0.5 hover:bg-black/92 disabled:cursor-not-allowed disabled:bg-black/50 sm:w-auto"
-              >
-                {isSubmitting
-                  ? "Створюємо checkout..."
-                  : "Перейти до оплати підписки"}
-              </button>
-            </form>
+              {selectedPlan?.note ? (
+                <p className="note" style={{ marginTop: 14 }}>
+                  {selectedPlan.note}
+                </p>
+              ) : null}
 
-            <div className="mt-5 text-sm leading-6 text-black/55">
-              Натискаючи кнопку, ви підтверджуєте згоду з{" "}
-              <Link href={`${landingUrl}/offer`} className="underline">
-                публічною офертою
-              </Link>{" "}
-              та{" "}
-              <Link href={`${landingUrl}/privacy`} className="underline">
-                політикою конфіденційності
-              </Link>
-              .
+              <form className="stack" style={{ marginTop: 28, gap: 20 }} onSubmit={onSubmit}>
+                <label className="field" style={{ display: "grid", gap: 10 }}>
+                  <span>{t.common.name}</span>
+                  <input
+                    required
+                    minLength={2}
+                    value={formState.customerName}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        customerName: event.target.value,
+                      }))
+                    }
+                    placeholder={t.common.namePlaceholder}
+                  />
+                </label>
+
+                <label className="field" style={{ display: "grid", gap: 10 }}>
+                  <span>{t.common.email}</span>
+                  <input
+                    required
+                    type="email"
+                    value={formState.customerEmail}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        customerEmail: event.target.value,
+                      }))
+                    }
+                    placeholder="name@company.com"
+                  />
+                </label>
+
+                <label className="field" style={{ display: "grid", gap: 10 }}>
+                  <span>{t.common.company}</span>
+                  <input
+                    value={formState.companyName}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        companyName: event.target.value,
+                      }))
+                    }
+                    placeholder={t.common.optional}
+                  />
+                </label>
+
+                {feedback ? <p className="alert">{feedback}</p> : null}
+
+                <button type="submit" className="cta" disabled={isSubmitting || !selectedPlanCode}>
+                  {isSubmitting ? t.common.preparingPayment : t.common.toPayment}
+                </button>
+
+                <Consent />
+              </form>
             </div>
-          </div>
-        </section>
-      </div>
-    </main>
+          </Reveal>
+        </div>
+      </main>
+
+      <BillingFooter />
+    </>
   );
 }

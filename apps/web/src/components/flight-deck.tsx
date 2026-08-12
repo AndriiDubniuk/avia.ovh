@@ -153,7 +153,26 @@ export function FlightDeck({ scenes }: { scenes: Scene[] }) {
           {scene.footer}
         </section>
       ))}
-      <div id="track" ref={trackRef} aria-hidden />
+      {/* Трек прокрутки. Всередині — по одній нульовій позначці на сцену:
+          з `scroll-snap-type: y proximity` браузер підтягує сторінку до
+          центру найближчої сцени, тому свайп більше не зупиняється на
+          порожньому фоні між блоками. `proximity`, а не `mandatory`:
+          вільна прокрутка лишається можливою. */}
+      <div id="track" ref={trackRef} aria-hidden>
+        {scenes.map((scene) => {
+          // Центр смуги видимості, а не обрізаних меж: у героя діапазон
+          // починається за нулем (-0.1), і обрізання зсувало його позначку
+          // на 280px замість самого верху сторінки.
+          const centre = Math.min(1, Math.max(0, (scene.from + scene.to) / 2));
+          return (
+            <i
+              key={scene.id}
+              className="snap"
+              style={{ top: `calc((100% - 100vh) * ${centre})` }}
+            />
+          );
+        })}
+      </div>
     </>
   );
 }

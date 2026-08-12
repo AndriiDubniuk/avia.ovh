@@ -388,22 +388,69 @@ export function Cockpit({
     };
   }, [sky, trackSelector]);
 
+  /**
+   * Прелоадер прибирається за реальною готовністю сторінки, а не за
+   * випадковим лічильником.
+   *
+   * Було: крок `random()*16 + 6` кожні 130 мс — від 5 до 17 тіків, тобто
+   * 0.7–2.2 с, плюс 350 мс паузи й 0.9 с згасання. Екран лишався
+   * закритим до 3.5 с навіть тоді, коли сторінка вже давно намальована.
+   *
+   * Стало: смуга йде за часом до 90%, добігає до 100% на `readyState`
+   * `complete`, тримається мінімум MIN_MS, щоб не блимнути, і зникає
+   * не пізніше MAX_MS у будь-якому разі.
+   */
   useEffect(() => {
-    let prog = 0;
-    const timer = window.setInterval(() => {
-      prog = Math.min(100, prog + Math.random() * 16 + 6);
-      if (barRef.current) barRef.current.style.width = `${prog}%`;
+    const started = performance.now();
+    /** Менше — смуга блимає й читається як глюк. */
+    const MIN_MS = 220;
+    /** Стеля: далі тримати екран немає підстав навіть на повільній мережі. */
+    const MAX_MS = 900;
+
+    let raf = 0;
+    let hidden = false;
+
+    function hide() {
+      if (hidden) return;
+      hidden = true;
+      if (preRef.current) preRef.current.dataset.gone = "true";
+    }
+
+    function paint() {
+      const elapsed = performance.now() - started;
+      const ready = document.readyState === "complete";
+      // До готовності тягнемось лише до 90%: решту дає сама подія.
+      const value = ready
+        ? 100
+        : Math.min(90, (elapsed / MAX_MS) * 100);
+
+      if (barRef.current) barRef.current.style.width = `${value}%`;
       if (metaRef.current) {
-        metaRef.current.textContent = `PREFLIGHT · ${String(Math.round(prog)).padStart(3, "0")}%`;
+        metaRef.current.textContent = `PREFLIGHT · ${String(
+          Math.round(value),
+        ).padStart(3, "0")}%`;
       }
-      if (prog >= 100) {
-        window.clearInterval(timer);
-        window.setTimeout(() => {
-          if (preRef.current) preRef.current.dataset.gone = "true";
-        }, 350);
+
+      if ((ready && elapsed >= MIN_MS) || elapsed >= MAX_MS) {
+        hide();
+        return;
       }
-    }, 130);
-    return () => window.clearInterval(timer);
+      raf = window.requestAnimationFrame(paint);
+    }
+
+    raf = window.requestAnimationFrame(paint);
+
+    /**
+     * Страхувальний таймер: `requestAnimationFrame` не виконується у фоновій
+     * вкладці, тож без нього користувач, який відкрив сайт «у фоні», побачив
+     * би чорну шторку назавжди. `setTimeout` спрацьовує і там.
+     */
+    const failsafe = window.setTimeout(hide, MAX_MS + 100);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(failsafe);
+    };
   }, []);
 
   return (

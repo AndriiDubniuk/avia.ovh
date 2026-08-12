@@ -6,7 +6,7 @@ import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-ch
 import { Cockpit } from "@/components/cockpit";
 import { useHref, useLang } from "@/components/lang-provider";
 
-const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
+const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "https://avia.ovh";
 
 /**
  * Екран показується, коли публічний checkout вимкнено.

@@ -8,7 +8,7 @@ import { LangSwitch, useHref, useLang } from "@/components/lang-provider";
 import type { Dict, Lang } from "@/lib/i18n";
 import { localizeHref } from "@/lib/routes";
 
-const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "http://localhost:3000";
+const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "https://avia.ovh";
 
 /** Адреса на avia.ovh тією ж мовою, що й поточна сторінка білінгу. */
 function landing(lang: Lang, path: string) {

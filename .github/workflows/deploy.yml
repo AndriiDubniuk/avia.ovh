@@ -17,6 +17,7 @@ jobs:
       packages: write
     outputs:
       sha_short: ${{ steps.meta.outputs.sha_short }}
+      build_time: ${{ steps.meta.outputs.build_time }}
       web_image: ${{ steps.meta.outputs.web_image }}
       api_image: ${{ steps.meta.outputs.api_image }}
       billing_image: ${{ steps.meta.outputs.billing_image }}
@@ -31,6 +32,7 @@ jobs:
           OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
           SHA_SHORT="${GITHUB_SHA::12}"
           echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           echo "web_image=ghcr.io/${OWNER_LC}/avia-ovh-web:${SHA_SHORT}" >> "$GITHUB_OUTPUT"
           echo "api_image=ghcr.io/${OWNER_LC}/avia-ovh-api:${SHA_SHORT}" >> "$GITHUB_OUTPUT"
           echo "billing_image=ghcr.io/${OWNER_LC}/avia-ovh-billing:${SHA_SHORT}" >> "$GITHUB_OUTPUT"
@@ -42,6 +44,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # NEXT_PUBLIC_* вшиваються в бандл під час складання образу. Файли
+      # .env.production, які деплой кладе на сервер, для них уже запізно —
+      # без цих build-args у прод потрапляв фолбек із коду (саме тому
+      # логотип у білінгу вів на http://localhost:3000).
       - name: Build and push web image
         uses: docker/build-push-action@v6
         with:
@@ -49,6 +55,11 @@ jobs:
           file: ./apps/web/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.web_image }}
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=https://avia.ovh
+            NEXT_PUBLIC_API_BASE_URL=/api
+            NEXT_PUBLIC_BILLING_URL=https://billing.avia.ovh
+            NEXT_PUBLIC_BUILD_TIME=${{ steps.meta.outputs.build_time }}
 
       - name: Build and push api image
         uses: docker/build-push-action@v6
@@ -65,6 +76,10 @@ jobs:
           file: ./apps/billing/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.billing_image }}
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=https://billing.avia.ovh
+            NEXT_PUBLIC_API_BASE_URL=/api
+            NEXT_PUBLIC_LANDING_URL=https://avia.ovh
 
   deploy:
     runs-on: ubuntu-latest

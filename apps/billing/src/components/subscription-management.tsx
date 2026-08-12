@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { BillingCrumb, BillingFooter, BillingTop } from "@/components/billing-chrome";
 import { Cockpit } from "@/components/cockpit";
-import { useLang } from "@/components/lang-provider";
+import { useHref, useLang } from "@/components/lang-provider";
 import { userMessage } from "@/lib/errors";
 import { Reveal } from "@/components/reveal";
 import { DICT, type Dict } from "@/lib/i18n";
@@ -101,6 +101,7 @@ export function SubscriptionManagement({
   mode?: SubscriptionManagementMode;
 }) {
   const { t } = useLang();
+  const href = useHref();
   const [snapshot, setSnapshot] = useState<SubscriptionSnapshot | null>(null);
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -299,7 +300,10 @@ export function SubscriptionManagement({
     <>
       <Cockpit sky="climb" />
       <BillingTop>
-        <Link href={mode === "portal" ? "/portal/subscriptions" : "/"} className="ghost">
+        <Link
+          href={href(mode === "portal" ? "/portal/subscriptions" : "/")}
+          className="ghost"
+        >
           {mode === "portal" ? t.manage.topLinkPortal : t.manage.topLinkPublic}
         </Link>
       </BillingTop>

@@ -119,31 +119,43 @@ export default function OpenGraphImage() {
               color: "rgba(138,147,168,1)",
             }}
           >
-            Старт
+            What we do
           </div>
           <div
             style={{
-              marginTop: 16,
-              fontSize: 48,
-              lineHeight: 1.05,
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
+              marginTop: 18,
+              fontSize: 22,
+              lineHeight: 1.25,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
               color: "#79E3C4",
             }}
           >
-            25 000 грн
+            Sites · Apps
           </div>
           <div
             style={{
-              marginTop: 12,
-              fontFamily: mono,
-              fontSize: 15,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
-              color: "rgba(207,232,228,0.62)",
+              marginTop: 10,
+              fontSize: 22,
+              lineHeight: 1.25,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
+              color: "#79E3C4",
             }}
           >
-            за послугу
+            Custom systems
+          </div>
+          <div
+            style={{
+              marginTop: 10,
+              fontSize: 22,
+              lineHeight: 1.25,
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
+              color: "#79E3C4",
+            }}
+          >
+            AI · Marketing
           </div>
         </div>
       </div>

@@ -111,9 +111,10 @@ a {
   align-items: center;
   justify-content: center;
   gap: 26px;
+  /* 0.9 с згасання додавали майже секунду до вже штучної затримки. */
   transition:
-    opacity 0.9s ease,
-    visibility 0.9s;
+    opacity 0.35s ease,
+    visibility 0.35s;
 }
 #pre[data-gone="true"] {
   opacity: 0;
@@ -1405,20 +1406,27 @@ header {
   header {
     --head-fade: 24px;
     padding: 12px 18px var(--head-fade);
+    /* На 375px вміст шапки просив 398px і вилазив за правий край:
+       відступ ліворуч був 18px, а праворуч —4.7px. Тиснемо проміжки,
+       щоб рядок вміщався й падінги стали симетричними. */
+    gap: 12px;
+  }
+  #topright .burger {
+    padding: 10px 0;
   }
   #logo {
     font-size: 12px;
     letter-spacing: 0.3em;
   }
   #topright {
-    gap: 14px;
+    gap: 10px;
   }
   /* Той самий фікс, що й на сайті: кнопка в шапці не переносить рядок. */
   #topright .book {
     white-space: nowrap;
-    padding: 7px 10px;
+    padding: 7px 9px;
     font-size: 10px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.1em;
   }
   #rail {
     display: none;
@@ -1704,3 +1712,21 @@ header {
   }
 }
 
+
+/* На сторінці керування підпискою в шапці стоїть `.ghost`, а не `.book`.
+   Його `margin-left: 18px` і нижні `padding` + `border` зсували текст
+   відносно перемикача мови — у флексі з `align-items: center` центрувалась
+   рамка, а не літери. У шапці ці зміщення нейтралізуємо. */
+#topright .ghost {
+  /* `margin: 0`, а не лише `margin-left`: у `.ghost` є ще `margin-top: 14px`
+     для блоків дій — саме він опускав текст на 7px нижче за перемикач мови,
+     хоча решта елементів шапки центрувались правильно. */
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom-color: transparent;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+#topright .ghost:hover {
+  border-bottom-color: var(--signal);
+}

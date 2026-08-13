@@ -22,8 +22,8 @@ export function HomeView() {
         // Ліва межа зсунута за нуль: інакше на самому верху сцена має
         // нульову прозорість і герой не читається до першої прокрутки.
         id: "s-hero",
-        from: -0.1,
-        to: 0.1,
+        from: -0.12,
+        to: 0.0784,
         center: true,
         content: (
           <>
@@ -39,8 +39,8 @@ export function HomeView() {
       },
       {
         id: "s-rotate",
-        from: 0.12,
-        to: 0.22,
+        from: 0.0644,
+        to: 0.2213,
         content: (
           <>
             <div className="eyebrow">{t.rotate.eyebrow}</div>
@@ -62,8 +62,11 @@ export function HomeView() {
       },
       {
         id: "s-man",
-        from: 0.24,
-        to: 0.37,
+        from: 0.2073,
+        to: 0.3641,
+        // Три короткі рядки: притиснуті вгору, вони лишали порожньою більшу
+        // частину екрана, особливо на високих телефонах.
+        center: true,
         content: (
           <div>
             {t.manifesto.map((line) => (
@@ -77,8 +80,8 @@ export function HomeView() {
       },
       {
         id: "s-av",
-        from: 0.39,
-        to: 0.52,
+        from: 0.3501,
+        to: 0.507,
         center: true,
         content: (
           <div id="avionics">
@@ -96,8 +99,8 @@ export function HomeView() {
       },
       {
         id: "s-log",
-        from: 0.54,
-        to: 0.65,
+        from: 0.493,
+        to: 0.6499,
         content: (
           <>
             <div className="eyebrow">{t.log.eyebrow}</div>
@@ -140,8 +143,8 @@ export function HomeView() {
       },
       {
         id: "s-plan",
-        from: 0.67,
-        to: 0.77,
+        from: 0.6359,
+        to: 0.7927,
         content: (
           <>
             <div className="eyebrow">{t.plan.eyebrow}</div>
@@ -156,8 +159,8 @@ export function HomeView() {
       },
       {
         id: "s-fares",
-        from: 0.79,
-        to: 0.89,
+        from: 0.7787,
+        to: 0.9356,
         content: (
           <>
             <div className="eyebrow">{t.fares.eyebrow}</div>
@@ -184,13 +187,12 @@ export function HomeView() {
         id: "s-cta",
         /**
          * Останній екран сайту: під ним більше нічого не прокручується.
-         * Вікно навмисно ширше за трек — band() дає максимум у центрі
-         * діапазону, тож центр 1.0 тримає сцену повністю видимою рівно
-         * на кінці прокрутки. З попереднім `to: 1.0` вона там згасала в
-         * нуль, бо далі йшов футер, який тепер вкладений у цю ж сцену.
+         * Вікно навмисно виходить за кінець треку, щоб сцена лишалась
+         * повністю видимою аж до останнього пікселя прокрутки, а не гасла
+         * разом із футером, який вкладений у неї.
          */
-        from: 0.88,
-        to: 1.12,
+        from: 0.9216,
+        to: 1.14,
         center: true,
         // Підвал прикріплений до низу цього ж екрана: він зʼявляється разом
         // з ним і не додає сторінці прокрутки, як раніше, коли лежав під треком.

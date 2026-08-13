@@ -74,8 +74,16 @@ export function Cockpit({
     function resize() {
       if (!cvs || !ctx) return;
       const DPR = Math.min(window.devicePixelRatio || 1, 2);
-      W = window.innerWidth;
-      H = window.innerHeight;
+      // Розмір беремо з власного боксу сцени, а не з вікна: на мобільному
+      // `innerHeight` — це visual viewport, а бокс — layout viewport плюс
+      // `100lvh`. Через цю різницю бітмап не збігався з боксом і малюнок
+      // розтягувався, а знизу лишалась смуга.
+      const box = cvs.parentElement;
+      // `|| window.inner*` — не косметика: у момент першого виклику бокс
+      // ще може повідомити 0, і тоді бітмап канви ставав нульовим, а небо
+      // не малювалось узагалі.
+      W = box?.clientWidth || window.innerWidth;
+      H = box?.clientHeight || window.innerHeight;
       cvs.width = W * DPR;
       cvs.height = H * DPR;
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -154,6 +162,17 @@ export function Cockpit({
     resize();
     readScroll();
     window.addEventListener("resize", resize);
+
+    /**
+     * Бокс сцени змінюється не лише разом із вікном: на мобільному він
+     * росте, коли ховається панель браузера. `resize` вікна там може не
+     * спрацювати, тому слухаємо саме елемент.
+     */
+    const observer =
+      typeof ResizeObserver !== "undefined" && cvs.parentElement
+        ? new ResizeObserver(() => resize())
+        : null;
+    observer?.observe(cvs.parentElement as Element);
     window.addEventListener("scroll", readScroll, { passive: true });
     window.addEventListener("mousemove", onMove);
     document.addEventListener("mouseover", onOver);
@@ -167,7 +186,7 @@ export function Cockpit({
         raf = window.requestAnimationFrame(frame);
         return;
       }
-      if (W !== window.innerWidth || H !== window.innerHeight) resize();
+      // Розмір відстежує ResizeObserver — тут перевіряти не треба.
 
       p += (target - p) * (reduced ? 1 : 0.055);
       mx += (tmx - mx) * 0.05;
@@ -383,6 +402,7 @@ export function Cockpit({
     return () => {
       window.cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      observer?.disconnect();
       window.removeEventListener("scroll", readScroll);
       window.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseover", onOver);

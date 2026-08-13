@@ -231,6 +231,13 @@ a {
   inset: 0;
   overflow: hidden;
   z-index: 1;
+  /* `position: fixed` розмічається за layout viewport, який на мобільному
+     не враховує зону згортної панелі браузера. Щойно панель ховається,
+     видима область стає вищою — і знизу зʼявлялась неприкрита смуга з
+     фоном body. `100lvh` — це висота вʼюпорта саме зі схованими панелями,
+     тож небо покриває обидва стани; зайве ховається за панеллю. */
+  min-height: 100vh;
+  min-height: 100lvh;
 }
 #stage canvas {
   position: absolute;
@@ -486,9 +493,9 @@ header {
   z-index: 20;
   display: flex;
   align-items: center;
-  /* Верхній відступ дорівнює висоті фіксованої шапки: без нього вміст,
-     який не вміщається у вʼюпорт, ховався під неї. */
-  padding: 92px 8vw 32px;
+  /* Верхній відступ трохи більший за шапку (74px), нижній — мінімальний:
+     разом вони зʼїдають висоту, якої на низьких екранах і так бракує. */
+  padding: 84px 8vw 24px;
   opacity: 0;
   pointer-events: none;
 }
@@ -1541,6 +1548,8 @@ header {
        і вміст високих сцен (ціни, план) ліз під фіксовану шапку. */
     padding-left: 7vw;
     padding-right: 7vw;
+    padding-top: 76px;
+    padding-bottom: 18px;
   }
   .page {
     padding: 120px 6vw 90px;
@@ -2285,5 +2294,43 @@ html {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-snap-type: none;
+  }
+}
+
+/* ============================================================
+   Низькі екрани: блок процесу
+   ============================================================ */
+/* На телефоні з панелями браузера корисної висоти лишається близько
+   660px. Заголовок, стрічка стадій і два ряди карток у неї не входили —
+   нижній ряд обрізався. Тут стискаємо саме цей блок, а не всю сцену. */
+@media (max-height: 800px) and (max-width: 900px) {
+  .planflow {
+    margin-top: 12px;
+  }
+  .planchip {
+    padding: 6px 8px 8px;
+  }
+  .planchip .chiptitle {
+    font-size: 11px;
+  }
+  .planstage {
+    margin-top: 8px;
+  }
+  .stageitems {
+    gap: 8px;
+  }
+  .stageitem {
+    padding: 10px 10px 12px;
+  }
+  .stageitem h3 {
+    margin: 4px 0 4px;
+    font-size: 13px;
+  }
+  .sitext {
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+  .stageitem .sino {
+    font-size: 9px;
   }
 }

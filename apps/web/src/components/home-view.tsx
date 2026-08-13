@@ -23,7 +23,7 @@ export function HomeView() {
         // нульову прозорість і герой не читається до першої прокрутки.
         id: "s-hero",
         from: -0.12,
-        to: 0.0784,
+        to: 0.0824,
         center: true,
         content: (
           <>
@@ -39,8 +39,8 @@ export function HomeView() {
       },
       {
         id: "s-rotate",
-        from: 0.0644,
-        to: 0.2213,
+        from: 0.0604,
+        to: 0.2253,
         content: (
           <>
             <div className="eyebrow">{t.rotate.eyebrow}</div>
@@ -62,8 +62,8 @@ export function HomeView() {
       },
       {
         id: "s-man",
-        from: 0.2073,
-        to: 0.3641,
+        from: 0.2033,
+        to: 0.3681,
         // Три короткі рядки: притиснуті вгору, вони лишали порожньою більшу
         // частину екрана, особливо на високих телефонах.
         center: true,
@@ -80,8 +80,8 @@ export function HomeView() {
       },
       {
         id: "s-av",
-        from: 0.3501,
-        to: 0.507,
+        from: 0.3461,
+        to: 0.511,
         center: true,
         content: (
           <div id="avionics">
@@ -99,8 +99,8 @@ export function HomeView() {
       },
       {
         id: "s-log",
-        from: 0.493,
-        to: 0.6499,
+        from: 0.489,
+        to: 0.6539,
         content: (
           <>
             <div className="eyebrow">{t.log.eyebrow}</div>
@@ -143,8 +143,8 @@ export function HomeView() {
       },
       {
         id: "s-plan",
-        from: 0.6359,
-        to: 0.7927,
+        from: 0.6319,
+        to: 0.7967,
         content: (
           <>
             <div className="eyebrow">{t.plan.eyebrow}</div>
@@ -159,8 +159,8 @@ export function HomeView() {
       },
       {
         id: "s-fares",
-        from: 0.7787,
-        to: 0.9356,
+        from: 0.7747,
+        to: 0.9396,
         content: (
           <>
             <div className="eyebrow">{t.fares.eyebrow}</div>
@@ -191,7 +191,7 @@ export function HomeView() {
          * повністю видимою аж до останнього пікселя прокрутки, а не гасла
          * разом із футером, який вкладений у неї.
          */
-        from: 0.9216,
+        from: 0.9176,
         to: 1.14,
         center: true,
         // Підвал прикріплений до низу цього ж екрана: він зʼявляється разом

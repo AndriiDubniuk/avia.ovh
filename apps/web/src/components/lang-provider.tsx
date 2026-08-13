@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 
 import { DICT, type Dict, type Lang } from "@/lib/i18n";
 import { localizeHref, otherLangHref } from "@/lib/routes";
@@ -43,7 +43,11 @@ export function useLang() {
  */
 export function useHref() {
   const { lang } = useLang();
-  return (path: string) => localizeHref(lang, path);
+  /* Стабільна ідентичність обовʼязкова: цю функцію беруть у залежності
+     useMemo зі сценами головної. Нова функція на кожному рендері змушувала
+     перераховувати сцени, перезапускати ефект прокрутки й скидати його
+     стан — разом із поточним прогресом, через що сцени сіпались. */
+  return useCallback((path: string) => localizeHref(lang, path), [lang]);
 }
 
 export function LangSwitch() {

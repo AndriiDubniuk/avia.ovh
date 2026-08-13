@@ -47,13 +47,12 @@ const SLIDE = 140;
 /**
  * Стеля швидкості зміни сцен, у частках треку за кадр.
  *
- * Коефіцієнта наздоганяння самого по собі мало: він задає частку від
- * відставання, тож чим різкіший кидок, тим швидше летять сцени. Різкий свайп
- * з інерцією проносив дві-три сцени за один жест. Ця стеля обмежує зміну
- * приблизно двома сценами за секунду незалежно від сили кидка. На повільне
- * гортання вона не впливає взагалі: там крок на порядок менший.
+ * Від перекидання через кілька блоків захищає перехоплення жесту нижче.
+ * Ця стеля лишається запобіжником для випадків, де жесту немає:
+ * перетягування смуги прокрутки, клавіші Home/End, програмний перехід.
+ * Тому вона висока й на звичайну прокрутку не впливає.
  */
-const MAX_STEP = 0.004;
+const MAX_STEP = 0.008;
 
 /**
  * Трапецієподібне вікно: 1 на всьому «плато» діапазону і спад завширшки
@@ -75,6 +74,12 @@ function band(x: number, a: number, b: number) {
 export function FlightDeck({ scenes }: { scenes: Scene[] }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const sceneRefs = useRef<(HTMLElement | null)[]>([]);
+  /**
+   * Стан прокрутки живе поза ефектом. Якби він лежав у локальних змінних,
+   * будь-який перезапуск ефекту скидав би поточний прогрес у нуль — і сцени
+   * стрибали б на початок.
+   */
+  const state = useRef({ progress: 0 });
 
   useEffect(() => {
     const track = trackRef.current;
@@ -82,7 +87,6 @@ export function FlightDeck({ scenes }: { scenes: Scene[] }) {
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    let progress = 0;
     let target = 0;
     let raf = 0;
 
@@ -95,6 +99,125 @@ export function FlightDeck({ scenes }: { scenes: Scene[] }) {
         scrollable > 0
           ? Math.min(1.4, Math.max(0, (window.scrollY - track.offsetTop) / scrollable))
           : 0;
+    }
+
+    /* ------------------------------------------------------------------
+       Один жест пальця — рівно одна сцена
+       ------------------------------------------------------------------
+       Спроби обмежити це засобами браузера не дали результату.
+       `scroll-snap-type: mandatory` гарантує лише зупинку на якійсь точці,
+       `scroll-snap-stop: always` діє вже після того, як інерція пронесла
+       сторінку, а корекція позиції постфактум не встигає за нею.
+
+       Тому інерцію гасимо в момент відпускання пальця й ведемо сторінку
+       власною анімацією до сусідньої сцени. Саме перетягування лишається
+       рідним: поки палець на екрані, сторінка йде за ним без втручання. */
+    const LAST = scenes.length - 1;
+    /** Тривалість доїзду до сцени, мс. */
+    const GLIDE = 520;
+    /** Порог, нижче якого жест вважається випадковим і сцена не змінюється. */
+    const THRESHOLD = 36;
+    /**
+     * Наскільки сторінка встигає зрушити під пальцем, у частках сцени.
+     *
+     * Раніше вона йшла за пальцем один до одного — і великий свайп через увесь
+     * екран сам по собі долав більш ніж сцену, а доїзд додавав ще одну. Тепер
+     * рух під пальцем лише показує напрямок, а скільки саме пройти — вирішує
+     * доїзд. Тому один жест дає рівно одну сцену, хоч би куди дійшов палець.
+     */
+    const PREVIEW = 0.22;
+
+    let touching = false;
+    let glide = 0;
+    let startY = 0;
+    let lastY = 0;
+    /** Позиція прокрутки на початку жесту: від неї рахуємо рух пальця. */
+    let startScroll = 0;
+    /** Сцена, на якій жест почався. Ціль рахуємо саме від неї. */
+    let startIndex = 0;
+
+    function sceneHeight() {
+      const scrollable = track ? track.offsetHeight - window.innerHeight : 0;
+      return scrollable / LAST;
+    }
+
+    function indexNow() {
+      return target * LAST;
+    }
+
+    function topOf(index: number) {
+      const scrollable = track ? track.offsetHeight - window.innerHeight : 0;
+      return (track?.offsetTop ?? 0) + (scrollable * index) / LAST;
+    }
+
+    /** Власний доїзд до сцени. Рідне підтягування тут уже не бере участі. */
+    function glideTo(index: number) {
+      window.cancelAnimationFrame(glide);
+      const from = window.scrollY;
+      const to = topOf(Math.max(0, Math.min(LAST, index)));
+      if (Math.abs(to - from) < 1) return;
+      const started = performance.now();
+      const tick = (now: number) => {
+        const k = Math.min(1, (now - started) / GLIDE);
+        // easeInOutCubic: мʼякий старт і мʼяке гальмування.
+        const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+        window.scrollTo({ top: from + (to - from) * e, behavior: "instant" });
+        read();
+        if (k < 1) glide = window.requestAnimationFrame(tick);
+      };
+      glide = window.requestAnimationFrame(tick);
+    }
+
+    function onScroll() {
+      read();
+    }
+
+    function onTouchStart(event: TouchEvent) {
+      // Новий дотик скасовує доїзд: керування повертається пальцю.
+      window.cancelAnimationFrame(glide);
+      touching = true;
+      startY = event.touches[0]?.clientY ?? 0;
+      lastY = startY;
+      startScroll = window.scrollY;
+      startIndex = Math.round(indexNow());
+    }
+
+    /**
+     * Прокрутку веде код, а не браузер.
+     *
+     * Сцени мають `touch-action: none`, тож рідна прокрутка над ними не
+     * стартує — а разом з нею не виникає й інерція. Це принципово: інерцію на
+     * Android рахує компоситор, і зупинити її з JS уже після старту не
+     * вдавалось, через що різкий кидок пролітав кілька блоків.
+     */
+    function onTouchMove(event: TouchEvent) {
+      const y = event.touches[0]?.clientY;
+      if (y === undefined) return;
+      lastY = y;
+      if (reduced) return;
+
+      /* Рух під пальцем обмежений і згасаючий: перші пікселі йдуть майже один
+         до одного, далі опір зростає й зсув упирається в стелю PREVIEW. Так
+         жест лишається відгукливим, але сам по собі нікуди не переносить. */
+      const межа = sceneHeight() * PREVIEW;
+      const рух = startY - y;
+      const зсув = межа * Math.tanh(рух / межа);
+      window.scrollTo({ top: startScroll + зсув, behavior: "instant" });
+      read();
+    }
+
+    function onTouchEnd() {
+      if (!touching) return;
+      touching = false;
+      if (reduced) return;
+
+      /* Ціль рахуємо від сцени, на якій жест почався, а не від поточної
+         позиції. Саме це робить результат незалежним від довжини свайпу:
+         і короткий рух, і кидок через увесь екран дають рівно одну сцену. */
+      const swipe = startY - lastY;
+      let goal = startIndex;
+      if (Math.abs(swipe) >= THRESHOLD) goal = startIndex + (swipe > 0 ? 1 : -1);
+      glideTo(goal);
     }
 
     /* Навігація по сценах: якорі в шапці ведуть на потрібну точку треку. */
@@ -133,7 +256,7 @@ export function FlightDeck({ scenes }: { scenes: Scene[] }) {
       // верху сторінки замість того, щоб одразу опинитись на потрібній сцені.
       window.scrollTo({ top: track.offsetTop + scrollable * centre, behavior: "instant" });
       read();
-      progress = target;
+      state.current.progress = target;
     }
     const jump = window.setTimeout(jumpToHash, 60);
 
@@ -153,12 +276,12 @@ export function FlightDeck({ scenes }: { scenes: Scene[] }) {
          означає менше пікселів — інерцію можна дозволити, не втрачаючи
          відгуку. Саме це, а не довжина треку, відповідає за плавність. */
       if (reduced) {
-        progress = target;
+        state.current.progress = target;
       } else {
-        const step = (target - progress) * 0.05;
-        progress += Math.max(-MAX_STEP, Math.min(MAX_STEP, step));
+        const step = (target - state.current.progress) * 0.05;
+        state.current.progress += Math.max(-MAX_STEP, Math.min(MAX_STEP, step));
       }
-      const p = progress;
+      const p = state.current.progress;
 
       scenes.forEach((scene, index) => {
         const el = sceneRefs.current[index];
@@ -207,14 +330,23 @@ export function FlightDeck({ scenes }: { scenes: Scene[] }) {
     }
 
     read();
-    window.addEventListener("scroll", read, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", read);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
     raf = window.requestAnimationFrame(paint);
 
     return () => {
       window.cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", read);
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", read);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      window.cancelAnimationFrame(glide);
       document.removeEventListener("click", onAnchorClick);
       window.clearTimeout(jump);
     };

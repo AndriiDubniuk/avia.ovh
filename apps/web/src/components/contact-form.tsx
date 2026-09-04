@@ -26,8 +26,7 @@ export function ContactForm() {
           .optional(),
         email: z.email(t.form.fields.email.error),
         contactMethod: z.string().min(1, t.form.fields.contact.methodError),
-        // 60 символів + найдовша назва каналу лишаються в межах 80,
-        // які приймає поле `contact` на боці API.
+        // 60 символів + найдовша назва каналу лишаються в межах 80, які приймає поле `contact` на боці API.
         contactValue: z
           .string()
           .trim()
@@ -100,15 +99,18 @@ export function ContactForm() {
     };
 
     try {
-      const response = await fetch(`${siteConfig.apiBaseUrl}/v1/contact-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${siteConfig.apiBaseUrl}/v1/contact-requests`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
-      const data = (await response.json().catch(() => null)) as
-        | { message?: string }
-        | null;
+      const data = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
 
       if (!response.ok) {
         throw new Error(data?.message ?? t.form.errorRequest);
@@ -199,7 +201,8 @@ export function ContactForm() {
               // Поле лишається доступним завжди, але без обраного каналу
               // підказка не має сенсу — тому просимо спершу обрати канал.
               placeholder={
-                selectedMethod?.placeholder ?? t.form.fields.contact.methodPlaceholder
+                selectedMethod?.placeholder ??
+                t.form.fields.contact.methodPlaceholder
               }
               {...form.register("contactValue")}
             />
@@ -240,7 +243,11 @@ export function ContactForm() {
           </p>
         ) : null}
 
-        <button type="submit" className="cta" disabled={form.formState.isSubmitting}>
+        <button
+          type="submit"
+          className="cta"
+          disabled={form.formState.isSubmitting}
+        >
           {form.formState.isSubmitting ? t.form.submitting : t.form.submit}
         </button>
       </form>

@@ -159,6 +159,15 @@ jobs:
           RESEND_FROM_EMAIL=${{ secrets.RESEND_FROM_EMAIL }}
           BILLING_NOTIFICATION_TO_EMAIL=${{ secrets.BILLING_NOTIFICATION_TO_EMAIL }}
           TOKEN_ENCRYPTION_KEY=${{ secrets.TOKEN_ENCRYPTION_KEY }}
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_SECURE=${{ secrets.SMTP_SECURE }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM_EMAIL=${{ secrets.SMTP_FROM_EMAIL }}
+          CONTACT_NOTIFICATION_TO_EMAIL=${{ secrets.CONTACT_NOTIFICATION_TO_EMAIL }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
           EOF
 
       - name: Prepare SSH

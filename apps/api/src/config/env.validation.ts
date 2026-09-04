@@ -133,6 +133,27 @@ export function validateEnv(config: RawEnv) {
     }
   }
 
+  /* Пошта контактної форми йде власним SMTP, а не через Resend: Resend
+     обслуговує білінг і лишається без змін. Хост не обовʼязковий — без нього
+     заявка просто зберігається в базі, а сервіс пише попередження в лог. */
+  const smtpHost = parseString(config.SMTP_HOST, '');
+  const smtpFromEmail = parseString(config.SMTP_FROM_EMAIL, '');
+
+  if (appEnv !== 'test' && smtpHost.trim() && !smtpFromEmail.trim()) {
+    throw new Error('SMTP_FROM_EMAIL is required when SMTP_HOST is set.');
+  }
+
+  /* Telegram — другий канал сповіщень про заявку, поряд із поштою. Обидва
+     необовʼязкові: без токена або чату сервіс просто пише попередження. */
+  const telegramBotToken = parseString(config.TELEGRAM_BOT_TOKEN, '');
+  const telegramChatId = parseString(config.TELEGRAM_CHAT_ID, '');
+
+  if (appEnv !== 'test' && telegramBotToken.trim() && !telegramChatId.trim()) {
+    throw new Error(
+      'TELEGRAM_CHAT_ID is required when TELEGRAM_BOT_TOKEN is set.',
+    );
+  }
+
   return {
     APP_ENV: appEnv,
     PORT: parseNumber(config.PORT, 3001, 'PORT'),
@@ -200,5 +221,17 @@ export function validateEnv(config: RawEnv) {
     RESEND_API_KEY: resendApiKey,
     RESEND_FROM_EMAIL: resendFromEmail,
     BILLING_NOTIFICATION_TO_EMAIL: billingNotificationToEmail,
+    SMTP_HOST: smtpHost,
+    SMTP_PORT: parseNumber(config.SMTP_PORT, 587, 'SMTP_PORT'),
+    SMTP_SECURE: parseBoolean(config.SMTP_SECURE, false),
+    SMTP_USER: parseString(config.SMTP_USER, ''),
+    SMTP_PASSWORD: parseString(config.SMTP_PASSWORD, ''),
+    SMTP_FROM_EMAIL: smtpFromEmail,
+    CONTACT_NOTIFICATION_TO_EMAIL: parseString(
+      config.CONTACT_NOTIFICATION_TO_EMAIL,
+      'sales@avia.ovh',
+    ),
+    TELEGRAM_BOT_TOKEN: telegramBotToken,
+    TELEGRAM_CHAT_ID: telegramChatId,
   };
 }

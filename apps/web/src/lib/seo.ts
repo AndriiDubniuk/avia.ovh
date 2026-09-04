@@ -14,9 +14,9 @@ export const SEO_COPY = {
       title: "AVIA Digital | Розробка сайтів, MVP та вебсервісів",
       ogTitle: "Одна команда — від ідеї до готового продукту",
       description:
-        "Лендінги від 45 000 грн, сайти компаній від 120 000 грн, магазини від 200 000 грн, MVP від 280 000 грн. Стартові ціни відкриті, кошторис погоджуємо до оплати.",
+        "Лендінги від 22 500 грн, сайти компаній від 120 000 грн, магазини від 200 000 грн, MVP від 280 000 грн. Стартові ціни відкриті, кошторис погоджуємо до оплати.",
       ogDescription:
-        "Лендінги, сайти компаній, магазини, MVP та інтеграції. Стартові ціни від 45 000 грн.",
+        "Лендінги, сайти компаній, магазини, MVP та інтеграції. Стартові ціни від 22 500 грн.",
     },
     contact: {
       title: "Обговорити проєкт",
@@ -41,9 +41,9 @@ export const SEO_COPY = {
       title: "AVIA Digital | Web, mobile and custom software development",
       ogTitle: "One team — from idea to finished product",
       description:
-        "Websites from ₴45,000, company sites from ₴120,000, online stores from ₴200,000, MVPs from ₴280,000. Public starting prices, the quote is agreed before payment.",
+        "Websites from ₴22,500, company sites from ₴120,000, online stores from ₴200,000, MVPs from ₴280,000. Public starting prices, the quote is agreed before payment.",
       ogDescription:
-        "Websites, company sites, online stores, MVPs and integrations. Starting prices from ₴45,000.",
+        "Websites, company sites, online stores, MVPs and integrations. Starting prices from ₴22,500.",
     },
     contact: {
       title: "Start a project",

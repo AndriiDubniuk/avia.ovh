@@ -1,6 +1,6 @@
 export const siteConfig = {
   name: "AVIA Digital",
-  priceLabel: "від 45 000 грн",
+  priceLabel: "від 22 500 грн",
   description:
     "Лендінги, сайти компаній, MVP, особисті кабінети та інтеграції. Одна команда веде продукт від структури до запуску.",
   primaryServiceName: "Розробка цифрових продуктів",

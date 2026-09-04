@@ -393,7 +393,7 @@ const ua: Dict = {
     packs: [
       {
         title: "Лендінг",
-        price: "від ₴45,000",
+        price: "від ₴22,500",
         timeline: "2–3 тижні",
         summary: "Структура, тексти, CTA, форма, SEO-база.",
       },
@@ -872,7 +872,7 @@ const en: Dict = {
     packs: [
       {
         title: "Landing page",
-        price: "from ₴45,000",
+        price: "from ₴22,500",
         timeline: "2–3 weeks",
         summary: "Structure, copy, CTA, lead form, SEO base.",
       },

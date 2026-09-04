@@ -232,7 +232,7 @@ export function StructuredData({ page, lang }: { page: Page; lang: Lang }) {
   );
 }
 
-/** «від ₴45,000» → «45000»: Schema.org приймає лише число. */
+/** «від ₴22,500» → «22500»: Schema.org приймає лише число. */
 function digits(value: string) {
   return value.replace(/[^\d]/g, "");
 }

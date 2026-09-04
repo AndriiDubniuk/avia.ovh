@@ -100,7 +100,7 @@ export function ContactForm() {
     };
 
     try {
-      const response = await fetch(`${siteConfig.apiBaseUrl}/contact-requests`, {
+      const response = await fetch(`${siteConfig.apiBaseUrl}/v1/contact-requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

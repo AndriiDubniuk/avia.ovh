@@ -1,9 +1,34 @@
+import {
+  BLOG_HUB,
+  BLOG_SLUGS,
+  getArticle,
+  getArticles,
+  plainText,
+  type BlogSlug,
+} from "@/lib/blog";
+import { getLocalPage, LOCAL_PATH } from "@/lib/cities";
 import { DICT, type Lang } from "@/lib/i18n";
 import { legalEntity } from "@/lib/legal-entity";
 import { localizeHref, LANG_TAG, type Route } from "@/lib/routes";
+import {
+  getService,
+  getServices,
+  SERVICE_SLUGS,
+  SERVICES_HUB,
+  type ServiceSlug,
+} from "@/lib/services";
 import { siteConfig } from "@/lib/site-data";
 
-type Page = "home" | "contact" | "offer" | "privacy";
+type Page =
+  | "home"
+  | "contact"
+  | "offer"
+  | "privacy"
+  | "services"
+  | "service"
+  | "blog"
+  | "article"
+  | "local";
 
 /**
  * Розмітка Schema.org. Рендериться на сервері тією мовою, якою віддається
@@ -13,7 +38,19 @@ type Page = "home" | "contact" | "offer" | "privacy";
  * Тому `Organization` + `hasOfferCatalog`, а не `LocalBusiness`:
  * останній вимагає фізичної точки обслуговування клієнтів, якої немає.
  */
-export function StructuredData({ page, lang }: { page: Page; lang: Lang }) {
+export function StructuredData({
+  page,
+  lang,
+  service,
+  article,
+}: {
+  page: Page;
+  lang: Lang;
+  /** Лише для page="service". */
+  service?: ServiceSlug;
+  /** Лише для page="article". */
+  article?: BlogSlug;
+}) {
   const t = DICT[lang];
   const url = siteConfig.siteUrl;
   const inLanguage = LANG_TAG[lang];
@@ -113,7 +150,6 @@ export function StructuredData({ page, lang }: { page: Page; lang: Lang }) {
         },
       })),
     },
-    sameAs: [siteConfig.portfolioUrl],
   };
 
   const websiteId = `${url}/#website-${lang}`;
@@ -177,6 +213,196 @@ export function StructuredData({ page, lang }: { page: Page; lang: Lang }) {
     };
   }
 
+  /** Хлібні крихти довільної глибини: Головна → … → сторінка. */
+  function breadcrumbTrail(trail: { name: string; path: Route }[]) {
+    const self = trail[trail.length - 1].path;
+    return {
+      "@type": "BreadcrumbList",
+      "@id": `${abs(self)}#breadcrumb`,
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "AVIA Digital", item: abs("/") },
+        ...trail.map((step, index) => ({
+          "@type": "ListItem",
+          position: index + 2,
+          name: step.name,
+          item: abs(step.path),
+        })),
+      ],
+    };
+  }
+
+  const hub = SERVICES_HUB[lang];
+
+  /**
+   * Сторінка послуги: Service + FAQPage. Питання й відповіді беруться з тих
+   * самих рядків, що й видимий FAQ, — розбіжності між розміткою й сторінкою
+   * бути не може.
+   */
+  function serviceGraph(slug: ServiceSlug) {
+    const item = getService(lang, slug);
+    const path: Route = `/services/${slug}`;
+    return [
+      webPage(item.name, path, true),
+      breadcrumbTrail([
+        { name: hub.name, path: "/services" },
+        { name: item.name, path },
+      ]),
+      {
+        "@type": "Service",
+        "@id": `${abs(path)}#service`,
+        name: item.h1,
+        serviceType: item.name,
+        description: item.metaDescription,
+        url: abs(path),
+        provider: { "@id": `${url}/#organization` },
+        ...(item.minPrice
+          ? {
+              offers: {
+                "@type": "Offer",
+                url: abs("/contact"),
+                priceSpecification: {
+                  "@type": "PriceSpecification",
+                  minPrice: item.minPrice,
+                  priceCurrency: "UAH",
+                  valueAddedTaxIncluded: true,
+                },
+              },
+            }
+          : {}),
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${abs(path)}#faq`,
+        inLanguage,
+        mainEntity: item.faq.map((entry) => ({
+          "@type": "Question",
+          name: entry.question,
+          acceptedAnswer: { "@type": "Answer", text: entry.answer },
+        })),
+      },
+    ];
+  }
+
+  const blog = BLOG_HUB[lang];
+
+  /**
+   * Стаття: BlogPosting + FAQPage. Відповіді FAQ можуть містити посилання —
+   * у розмітку йде чистий текст, той самий, що бачить читач.
+   */
+  function articleGraph(slug: BlogSlug) {
+    const item = getArticle(lang, slug);
+    const path: Route = `/blog/${slug}`;
+    const self = abs(path);
+    return [
+      webPage(item.h1, path, true),
+      breadcrumbTrail([
+        { name: blog.name, path: "/blog" },
+        { name: item.h1, path },
+      ]),
+      {
+        "@type": "BlogPosting",
+        "@id": `${self}#article`,
+        headline: item.h1,
+        description: item.metaDescription,
+        url: self,
+        inLanguage,
+        datePublished: item.published,
+        dateModified: item.published,
+        mainEntityOfPage: { "@id": `${self}#webpage` },
+        author: { "@id": `${url}/#organization` },
+        publisher: { "@id": `${url}/#organization` },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${self}#faq`,
+        inLanguage,
+        mainEntity: item.faq.map((entry) => ({
+          "@type": "Question",
+          name: entry.question,
+          acceptedAnswer: { "@type": "Answer", text: plainText(entry.answer) },
+        })),
+      },
+    ];
+  }
+
+  /**
+   * Житомир і вся Україна: Service з areaServed (місто й країна). Не
+   * LocalBusiness — у компанії немає фізичної точки для клієнтів, а
+   * LocalBusiness Google очікує саме від неї.
+   */
+  function localGraph() {
+    const item = getLocalPage(lang);
+    const path: Route = LOCAL_PATH;
+    const self = abs(path);
+    return [
+      webPage(item.name, path, true),
+      breadcrumbTrail([
+        { name: hub.name, path: "/services" },
+        { name: item.name, path },
+      ]),
+      {
+        "@type": "Service",
+        "@id": `${self}#service`,
+        name: item.h1,
+        description: item.metaDescription,
+        url: self,
+        provider: { "@id": `${url}/#organization` },
+        areaServed: [
+          { "@type": "City", name: item.baseCity },
+          { "@type": "Country", name: item.country },
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${self}#faq`,
+        inLanguage,
+        mainEntity: item.faq.map((entry) => ({
+          "@type": "Question",
+          name: entry.question,
+          acceptedAnswer: { "@type": "Answer", text: entry.answer },
+        })),
+      },
+    ];
+  }
+
+  /** Хаб блогу: перелік статей. */
+  function blogGraph() {
+    const all = getArticles(lang);
+    return [
+      webPage(blog.name, "/blog", true),
+      breadcrumbTrail([{ name: blog.name, path: "/blog" }]),
+      {
+        "@type": "ItemList",
+        "@id": `${abs("/blog")}#list`,
+        itemListElement: BLOG_SLUGS.map((slug, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: all[slug].h1,
+          url: abs(`/blog/${slug}`),
+        })),
+      },
+    ];
+  }
+
+  /** Хаб: перелік посадкових сторінок. */
+  function hubGraph() {
+    const all = getServices(lang);
+    return [
+      webPage(hub.name, "/services", true),
+      breadcrumbTrail([{ name: hub.name, path: "/services" }]),
+      {
+        "@type": "ItemList",
+        "@id": `${abs("/services")}#list`,
+        itemListElement: SERVICE_SLUGS.map((slug, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: all[slug].name,
+          url: abs(`/services/${slug}`),
+        })),
+      },
+    ];
+  }
+
   /** Вузол сторінки прив'язує решту графа до конкретної адреси. */
   function webPage(name: string, path: Route, hasBreadcrumb: boolean) {
     const self = abs(path);
@@ -200,7 +426,17 @@ export function StructuredData({ page, lang }: { page: Page; lang: Lang }) {
   const base = [organization, website];
 
   const graph =
-    page === "home"
+    page === "local"
+      ? [...base, ...localGraph()]
+      : page === "article" && article
+      ? [...base, ...articleGraph(article)]
+      : page === "blog"
+        ? [...base, ...blogGraph()]
+        : page === "service" && service
+      ? [...base, ...serviceGraph(service)]
+      : page === "services"
+        ? [...base, ...hubGraph()]
+        : page === "home"
       ? [...base, webPage(siteConfig.name, "/", false), ...services]
       : page === "contact"
         ? [

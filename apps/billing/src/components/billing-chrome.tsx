@@ -10,13 +10,13 @@ import { localizeHref } from "@/lib/routes";
 
 const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL ?? "https://avia.ovh";
 
-/** Адреса на avia.ovh тією ж мовою, що й поточна сторінка білінгу. */
+/** Адреса на основному сайті тією ж мовою, що й поточна сторінка білінгу. */
 function landing(lang: Lang, path: string) {
   return `${landingUrl}${localizeHref(lang, path)}`;
 }
 
 /**
- * Наповнення навігації збігається з avia.ovh — той самий набір пунктів
+ * Наповнення навігації збігається з основним сайтом — той самий набір пунктів
  * і той самий порядок. Різниця лише в тому, що розділи головної ведуть
  * на неї абсолютними адресами тією ж мовою.
  */

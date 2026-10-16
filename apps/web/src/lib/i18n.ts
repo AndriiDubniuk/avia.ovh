@@ -35,7 +35,6 @@ type Dict = {
 
   nav: {
     avionics: string;
-    log: string;
     fares: string;
     plan: string;
     book: string;
@@ -79,11 +78,6 @@ type Dict = {
     nodes: { name: string; read: string }[];
   };
 
-  log: {
-    eyebrow: string;
-    title: string[];
-    legs: { no: string; dest: string; cat: string; val: string }[];
-  };
 
   plan: {
     eyebrow: string;
@@ -186,7 +180,6 @@ const ua: Dict = {
 
   nav: {
     avionics: "Послуги",
-    log: "Кейси",
     fares: "Ціни",
     plan: "Процес",
     book: "Запустити проєкт",
@@ -262,31 +255,6 @@ const ua: Dict = {
     ],
   },
 
-  log: {
-    eyebrow: "Журнал місій · Орбіта",
-    title: ["Кожен кейс —", "це нова висота."],
-    legs: [
-      { no: "01", dest: "MONIBEX", cat: "Фінтех · управління фінансами", val: "продукт і бренд" },
-      {
-        no: "02",
-        dest: "WANDER BOUTIQUE",
-        cat: "Крафтовий шоколад · Київ, Житомир",
-        val: "онлайн-магазин",
-      },
-      {
-        no: "03",
-        dest: "SNS GRILLS УКРАЇНА",
-        cat: "Грилі та BBQ · офіційний дистриб'ютор",
-        val: "каталог і продажі",
-      },
-      {
-        no: "04",
-        dest: "GRADOIL",
-        cat: "Переробка соняшнику й ріпаку · Кропивницький",
-        val: "корпоративний сайт",
-      },
-    ],
-  },
 
   plan: {
     eyebrow: "Траєкторія проєкту",
@@ -437,7 +405,7 @@ const ua: Dict = {
     markets: ["УКРАЇНА", "ЄВРОПА", "ВЕЛИКА БРИТАНІЯ", "США"],
     record: "ЧІТКИЙ СКОУП · ПУБЛІЧНІ ЦІНИ · SENIOR-КОМАНДА — без невизначеності до старту.",
     cta: "Запустити проєкт →",
-    ghost: "Дивитися кейси",
+    ghost: "Дивитися послуги",
   },
 
   contactPage: {
@@ -663,7 +631,6 @@ const en: Dict = {
 
   nav: {
     avionics: "Services",
-    log: "Work",
     fares: "Pricing",
     plan: "Process",
     book: "Launch a project",
@@ -739,31 +706,6 @@ const en: Dict = {
     ],
   },
 
-  log: {
-    eyebrow: "Mission log · Orbit",
-    title: ["Every case", "is a new altitude."],
-    legs: [
-      { no: "01", dest: "MONIBEX", cat: "Fintech · personal finance", val: "product & brand" },
-      {
-        no: "02",
-        dest: "WANDER BOUTIQUE",
-        cat: "Craft chocolate · Kyiv, Zhytomyr",
-        val: "online store",
-      },
-      {
-        no: "03",
-        dest: "SNS GRILLS UKRAINE",
-        cat: "Grills & BBQ · official distributor",
-        val: "catalogue & sales",
-      },
-      {
-        no: "04",
-        dest: "GRADOIL",
-        cat: "Sunflower & rapeseed crushing · Kropyvnytskyi",
-        val: "corporate website",
-      },
-    ],
-  },
 
   plan: {
     eyebrow: "Project trajectory",
@@ -917,7 +859,7 @@ const en: Dict = {
     record:
       "CLEAR SCOPE · PUBLIC PRICES · SENIOR TEAM — no uncertainty before you commit.",
     cta: "Launch a project →",
-    ghost: "See the work",
+    ghost: "See our services",
   },
 
   contactPage: {

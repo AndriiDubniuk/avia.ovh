@@ -6,6 +6,18 @@ import { localizeHref, ROUTES } from "@/lib/routes";
 /** Пріоритет за типом сторінки — головна вище, юридичні нижче. */
 const PRIORITY: Record<string, number> = {
   "/": 1,
+  // Посадкові сторінки послуг — головні точки входу з пошуку після головної.
+  "/services": 0.8,
+  "/services/landing": 0.9,
+  "/services/corporate-site": 0.9,
+  "/services/mvp": 0.9,
+  "/services/integrations": 0.9,
+  "/rozrobka-sajtiv": 0.9,
+  "/blog": 0.6,
+  "/blog/skilky-koshtuye-rozrobka-mvp": 0.7,
+  "/blog/lending-chy-sajt-kompanii": 0.7,
+  "/blog/skilky-koshtuye-rozrobka-sajtu": 0.7,
+  "/blog/shcho-take-mvp": 0.7,
   "/contact": 0.8,
   "/offer": 0.6,
   "/privacy": 0.6,

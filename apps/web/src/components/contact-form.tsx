@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import { userMessage } from "@/lib/errors";
 import { siteConfig } from "@/lib/site-data";
 
 export function ContactForm() {
+  const methodLabelId = useId();
   const { t, lang } = useLang();
   const href = useHref();
 
@@ -132,7 +133,14 @@ export function ContactForm() {
       <h2>{t.form.title}</h2>
       <p>{t.form.lead}</p>
 
-      <form className="mt-7 grid gap-5" onSubmit={form.handleSubmit(onSubmit)}>
+      {/* method="post" — на випадок відправки до гідратації: тоді браузер
+          надіслав би поля GET-ом прямо в адресу сторінки. Звичайний шлях —
+          fetch у onSubmit, і він і так POST. */}
+      <form
+        method="post"
+        className="mt-7 grid gap-5"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <div className="grid gap-5 md:grid-cols-2">
           <Field
             label={t.form.fields.name.label}
@@ -140,6 +148,7 @@ export function ContactForm() {
             input={
               <input
                 type="text"
+                autoComplete="name"
                 placeholder={t.form.fields.name.placeholder}
                 {...form.register("name")}
               />
@@ -151,6 +160,7 @@ export function ContactForm() {
             input={
               <input
                 type="text"
+                autoComplete="organization"
                 placeholder={t.form.fields.company.placeholder}
                 {...form.register("companyName")}
               />
@@ -165,6 +175,7 @@ export function ContactForm() {
             input={
               <input
                 type="email"
+                autoComplete="email"
                 placeholder={t.form.fields.email.placeholder}
                 {...form.register("email")}
               />
@@ -174,8 +185,10 @@ export function ContactForm() {
             label={t.form.fields.contact.methodLabel}
             error={form.formState.errors.contactMethod?.message}
             native={false}
+            labelId={methodLabelId}
             input={
               <Combobox
+                labelledBy={methodLabelId}
                 options={t.form.fields.contact.methods}
                 value={contactMethod}
                 onChange={(id) =>
@@ -198,6 +211,8 @@ export function ContactForm() {
           input={
             <input
               type={selectedMethod?.id === "phone" ? "tel" : "text"}
+              // Телефон браузер підставить сам; нік у месенджері — ні.
+              autoComplete={selectedMethod?.id === "phone" ? "tel" : "off"}
               // Поле лишається доступним завжди, але без обраного каналу
               // підказка не має сенсу — тому просимо спершу обрати канал.
               placeholder={
@@ -265,15 +280,17 @@ function Field({
   input,
   error,
   native = true,
+  labelId,
 }: {
   label: string;
+  labelId?: string;
   input: React.ReactNode;
   error?: string;
   native?: boolean;
 }) {
   const content = (
     <>
-      <span>{label}</span>
+      <span id={labelId}>{label}</span>
       {input}
       {error ? <span className="err">{error}</span> : null}
     </>

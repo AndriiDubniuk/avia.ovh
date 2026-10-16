@@ -7,6 +7,9 @@ export const size = {
 
 export const contentType = "image/png";
 
+/** Текст для og:image:alt — його читають скрінрідери й соцмережі. */
+export const alt = "AVIA Digital — websites, MVPs and client portals built around the business task";
+
 const mono = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 
 export default function OpenGraphImage() {
@@ -94,7 +97,7 @@ export default function OpenGraphImage() {
                 maxWidth: 700,
               }}
             >
-              Six formats, public starting prices, real cases.
+              Six formats, public starting prices, a quote before payment.
             </div>
           </div>
         </div>

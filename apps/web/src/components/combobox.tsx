@@ -19,6 +19,7 @@ export function Combobox({
   noResults,
   invalid,
   describedBy,
+  labelledBy,
 }: {
   options: ComboOption[];
   value: string;
@@ -28,6 +29,8 @@ export function Combobox({
   noResults: string;
   invalid?: boolean;
   describedBy?: string;
+  /** id підпису поля: без нього скрінрідер чує лише плейсхолдер. */
+  labelledBy?: string;
 }) {
   const listId = useId();
   const [open, setOpen] = useState(false);
@@ -114,6 +117,7 @@ export function Combobox({
         aria-haspopup="listbox"
         aria-invalid={invalid || undefined}
         aria-describedby={describedBy}
+        aria-labelledby={labelledBy}
         data-empty={selected ? undefined : true}
         onClick={() => (open ? close() : setOpen(true))}
         onKeyDown={(event) => {

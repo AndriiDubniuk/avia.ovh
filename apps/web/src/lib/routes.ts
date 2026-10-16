@@ -17,7 +17,23 @@ export const HTML_LANG: Record<Lang, string> = { ua: "uk", en: "en" };
 export const OG_LOCALE: Record<Lang, string> = { ua: "uk_UA", en: "en_GB" };
 
 /** Шляхи без мовного префікса — базис і для роутів, і для sitemap. */
-export const ROUTES = ["/", "/contact", "/offer", "/privacy"] as const;
+export const ROUTES = [
+  "/",
+  "/services",
+  "/services/landing",
+  "/services/corporate-site",
+  "/services/mvp",
+  "/services/integrations",
+  "/rozrobka-sajtiv",
+  "/blog",
+  "/blog/skilky-koshtuye-rozrobka-mvp",
+  "/blog/lending-chy-sajt-kompanii",
+  "/blog/skilky-koshtuye-rozrobka-sajtu",
+  "/blog/shcho-take-mvp",
+  "/contact",
+  "/offer",
+  "/privacy",
+] as const;
 export type Route = (typeof ROUTES)[number];
 
 /**

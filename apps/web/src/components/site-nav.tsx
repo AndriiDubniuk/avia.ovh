@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { LangSwitch, useHref, useLang } from "@/components/lang-provider";
 import { localizeHref } from "@/lib/routes";
+import { BLOG_HUB } from "@/lib/blog";
+import { getServices, SERVICE_SLUGS, SERVICES_HUB } from "@/lib/services";
 
 const BILLING_URL =
   process.env.NEXT_PUBLIC_BILLING_URL ?? "https://billing.avia.ovh";
@@ -26,15 +28,29 @@ function useNavLinks() {
   // повна адреса головної тією ж мовою, інакше EN-сторінка кинула б на UA.
   const prefix = onHome ? "" : home;
 
+  const services = getServices(lang);
+
   return {
     onHome,
+    /** Хаб послуг — окремий пункт: на відміну від якорів, це сторінка. */
+    servicesHub: { href: href("/services"), label: SERVICES_HUB[lang].name },
+    /** Той самий хаб у списку поруч із підзаголовком «Послуги». */
+    servicesAll: { href: href("/services"), label: SERVICES_HUB[lang].all },
+    services: SERVICE_SLUGS.map((slug) => ({
+      href: href(`/services/${slug}`),
+      label: services[slug].name,
+    })),
     sections: [
-      { href: `${prefix}#s-av`, label: t.nav.avionics },
-      { href: `${prefix}#s-log`, label: t.nav.log },
+      // Колишній якір «Послуги» (#s-av) замінено на окрему сторінку /services —
+      // інакше в меню стояло б два пункти з однаковою назвою.
       { href: `${prefix}#s-fares`, label: t.nav.fares },
       { href: `${prefix}#s-plan`, label: t.nav.plan },
     ],
+    blog: { href: href("/blog"), label: BLOG_HUB[lang].name },
     pages: [
+      // Блог — першим серед сторінок: так він потрапляє і в мобільне меню,
+      // і в підвал без окремої розмітки.
+      { href: href("/blog"), label: BLOG_HUB[lang].name, external: false },
       { href: href("/contact"), label: t.homeFooter.contact, external: false },
       { href: href("/offer"), label: t.homeFooter.offer, external: false },
       { href: href("/privacy"), label: t.homeFooter.privacy, external: false },
@@ -47,7 +63,7 @@ export function SiteHeader() {
   const { t } = useLang();
   const href = useHref();
   const pathname = usePathname();
-  const { sections, pages } = useNavLinks();
+  const { sections, pages, services, servicesHub, servicesAll, blog } = useNavLinks();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -70,6 +86,15 @@ export function SiteHeader() {
 
       <div id="topright">
         <nav className="navlinks" aria-label={t.nav.sections}>
+          <Link
+            href={servicesHub.href}
+            aria-current={pathname === servicesHub.href ? "page" : undefined}
+          >
+            {servicesHub.label}
+          </Link>
+          <Link href={blog.href} aria-current={pathname === blog.href ? "page" : undefined}>
+            {blog.label}
+          </Link>
           {sections.map((item) => (
             <a key={item.href} href={item.href}>
               {item.label}
@@ -114,6 +139,20 @@ export function SiteHeader() {
           ))}
         </nav>
 
+        <p className="mtag">{servicesHub.label}</p>
+        <nav aria-label={servicesHub.label}>
+          {[servicesAll, ...services].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={pathname === item.href ? "page" : undefined}
+              onClick={() => setOpen(false)}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
         <p className="mtag">{t.nav.pages}</p>
         <nav aria-label={t.nav.pages}>
           {pages.map((item) =>
@@ -147,7 +186,7 @@ export function SiteHeader() {
 export function SiteFooter() {
   const { t } = useLang();
   const pathname = usePathname();
-  const { sections, pages, onHome } = useNavLinks();
+  const { sections, pages, onHome, services, servicesAll } = useNavLinks();
 
   return (
     // На головній підвал лягає поверх фіксованих сцен — йому потрібен щільний фон.
@@ -155,6 +194,15 @@ export function SiteFooter() {
       <div className="inner">
         <div className="brand">{t.homeFooter.rights}</div>
         <nav aria-label={t.nav.pages}>
+          {[servicesAll, ...services].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={pathname === item.href ? "page" : undefined}
+            >
+              {item.label}
+            </Link>
+          ))}
           {sections.map((item) => (
             <a key={item.href} href={item.href}>
               {item.label}

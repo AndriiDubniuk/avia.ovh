@@ -19,9 +19,15 @@ export function ContactView() {
   return (
     <>
       <Cockpit sky="climb" />
+      {/* Перший фокусований елемент: дає пропустити шапку з меню й одразу
+          перейти до вмісту з клавіатури. На головній такий самий веде до
+          першої сцени. */}
+      <a href="#main" className="skip">
+        {t.nav.skip}
+      </a>
       <SiteHeader />
 
-      <main className="page">
+      <main id="main" tabIndex={-1} className="page">
         <nav className="crumb">
           <Link href={href("/")}>AVIA.OVH</Link>
           <i>/</i>

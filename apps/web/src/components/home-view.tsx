@@ -10,8 +10,6 @@ import { PlanFlow } from "@/components/plan-flow";
 import { useHref, useLang } from "@/components/lang-provider";
 import { SiteFooter, SiteHeader } from "@/components/site-nav";
 
-const PORTFOLIO_URL = "https://monibex.com";
-
 export function HomeView() {
   const { t, lang } = useLang();
   const href = useHref();
@@ -23,7 +21,7 @@ export function HomeView() {
         // нульову прозорість і герой не читається до першої прокрутки.
         id: "s-hero",
         from: -0.12,
-        to: 0.0824,
+        to: 0.0943,
         center: true,
         content: (
           <>
@@ -39,8 +37,8 @@ export function HomeView() {
       },
       {
         id: "s-rotate",
-        from: 0.0604,
-        to: 0.2253,
+        from: 0.0723,
+        to: 0.261,
         content: (
           <>
             <div className="eyebrow">{t.rotate.eyebrow}</div>
@@ -62,8 +60,8 @@ export function HomeView() {
       },
       {
         id: "s-man",
-        from: 0.2033,
-        to: 0.3681,
+        from: 0.239,
+        to: 0.4277,
         // Три короткі рядки: притиснуті вгору, вони лишали порожньою більшу
         // частину екрана, особливо на високих телефонах.
         center: true,
@@ -80,8 +78,8 @@ export function HomeView() {
       },
       {
         id: "s-av",
-        from: 0.3461,
-        to: 0.511,
+        from: 0.4057,
+        to: 0.5943,
         center: true,
         content: (
           <div id="avionics">
@@ -98,53 +96,9 @@ export function HomeView() {
         ),
       },
       {
-        id: "s-log",
-        from: 0.489,
-        to: 0.6539,
-        content: (
-          <>
-            <div className="eyebrow">{t.log.eyebrow}</div>
-            <h2 className="mid">
-              {t.log.title[0]}
-              <br />
-              {t.log.title[1]}
-            </h2>
-            <div className="log">
-              {t.log.legs.map((leg) =>
-                leg.dest === "MONIBEX" ? (
-                  <a
-                    key={leg.dest}
-                    className="leg"
-                    href={PORTFOLIO_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span className="no">{leg.no}</span>
-                    <div>
-                      <div className="dest">{leg.dest}</div>
-                      <div className="cat">{leg.cat}</div>
-                    </div>
-                    <span className="val">{leg.val}</span>
-                  </a>
-                ) : (
-                  <div key={leg.dest} className="leg">
-                    <span className="no">{leg.no}</span>
-                    <div>
-                      <div className="dest">{leg.dest}</div>
-                      <div className="cat">{leg.cat}</div>
-                    </div>
-                    <span className="val">{leg.val}</span>
-                  </div>
-                ),
-              )}
-            </div>
-          </>
-        ),
-      },
-      {
         id: "s-plan",
-        from: 0.6319,
-        to: 0.7967,
+        from: 0.5723,
+        to: 0.761,
         content: (
           <>
             <div className="eyebrow">{t.plan.eyebrow}</div>
@@ -159,8 +113,8 @@ export function HomeView() {
       },
       {
         id: "s-fares",
-        from: 0.7747,
-        to: 0.9396,
+        from: 0.739,
+        to: 0.9277,
         content: (
           <>
             <div className="eyebrow">{t.fares.eyebrow}</div>
@@ -191,7 +145,7 @@ export function HomeView() {
          * повністю видимою аж до останнього пікселя прокрутки, а не гасла
          * разом із футером, який вкладений у неї.
          */
-        from: 0.9176,
+        from: 0.9057,
         to: 1.14,
         center: true,
         // Підвал прикріплений до низу цього ж екрана: він зʼявляється разом
@@ -219,9 +173,9 @@ export function HomeView() {
               <Link className="cta" href={href("/contact")}>
                 {t.departure.cta}
               </Link>
-              <a className="ghost" href="#s-log">
+              <Link className="ghost" href={href("/services")}>
                 {t.departure.ghost}
-              </a>
+              </Link>
             </div>
             <p className="record">{t.departure.record}</p>
           </>

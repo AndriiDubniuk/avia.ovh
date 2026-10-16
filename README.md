@@ -70,6 +70,7 @@ cd apps/billing && pnpm build
 
 ## Продакшн-деплой на `avia.ovh`
 
+
 - використовується `Traefik` на VPS, основний сайт, billing і API сидять поруч
 - фронт віддається з `https://avia.ovh`
 - billing віддається з `https://billing.avia.ovh`

@@ -57,7 +57,14 @@ type Dict = {
     rights: string;
   };
 
-  hero: { eyebrow: string; title: string[]; sub: string; cue: string };
+  hero: {
+    eyebrow: string;
+    title: string[];
+    /** Фрази заголовка першого екрана: [до акценту, акцент, після]. */
+    rotating: [string, string, string][];
+    sub: string;
+    cue: string;
+  };
 
   notFound: {
     metaTitle: string;
@@ -214,6 +221,11 @@ const ua: Dict = {
   hero: {
     eyebrow: "Курс на запуск",
     title: ["Одна команда —", "від ідеї до готового продукту."],
+    rotating: [
+      ["Ми піднімаємо ", "продукти", " вгору."],
+      ["Запускаємо ", "сайти", ", MVP і кабінети."],
+      ["Інтегруємо й ", "автоматизуємо", " ваш бізнес."],
+    ],
     sub: "Сайти, застосунки, кастомні системи, AI та digital-маркетинг. Беремо задачу цілком: від стратегії й дизайну до розробки, запуску та зростання.",
     cue: "ГОРТАЙТЕ, ЩОБ ЗЛЕТІТИ",
   },
@@ -665,6 +677,11 @@ const en: Dict = {
   hero: {
     eyebrow: "On course to launch",
     title: ["One team —", "from idea to finished product."],
+    rotating: [
+      ["We lift ", "products", " off the ground."],
+      ["We launch ", "websites", ", MVPs and portals."],
+      ["We integrate and ", "automate", " your business."],
+    ],
     sub: "Websites, apps, custom systems, AI and digital marketing. We take the whole task: from strategy and design through build, launch and growth.",
     cue: "SCROLL TO TAKE OFF",
   },

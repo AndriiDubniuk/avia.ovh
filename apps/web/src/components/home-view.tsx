@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { AvionicsMap } from "@/components/avionics-map";
 import { Cockpit } from "@/components/cockpit";
 import { FlightDeck, type Scene } from "@/components/flight-deck";
+import { HeroIntro } from "@/components/hero-intro";
 import { PlanFlow } from "@/components/plan-flow";
 import { useHref, useLang } from "@/components/lang-provider";
 import { SiteFooter, SiteHeader } from "@/components/site-nav";
@@ -22,18 +23,8 @@ export function HomeView() {
         id: "s-hero",
         from: -0.12,
         to: 0.0943,
-        center: true,
-        content: (
-          <>
-            <div className="eyebrow">{t.hero.eyebrow}</div>
-            <h1 className="huge">
-              {t.hero.title[0]}
-              <br />
-              {t.hero.title[1]}
-            </h1>
-            <p className="sub">{t.hero.sub}</p>
-          </>
-        ),
+        // Текст ліворуч, форма заявки праворуч — див. HeroIntro.
+        content: <HeroIntro />,
       },
       {
         id: "s-rotate",

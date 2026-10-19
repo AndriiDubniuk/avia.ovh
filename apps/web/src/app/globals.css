@@ -1379,6 +1379,11 @@ header {
   color: var(--muted);
   text-transform: uppercase;
 }
+/* У парі полів рядок сітки росте під помилку сусіда; без цього зайва висота
+   розподілялась між підписом і полем, і поле зʼїжджало вниз. */
+.field {
+  align-content: start;
+}
 .field .err {
   font-family: var(--mono);
   font-size: 11px;
@@ -2599,3 +2604,212 @@ html:has(#track) body {
   outline-offset: 2px;
 }
 
+
+/* ============================================================
+   Перший екран головної: текст + форма заявки
+   ============================================================ */
+.hero-split {
+  display: grid;
+  gap: 56px;
+  /* Текст починається на одному рівні з формою, а не висить посередині її
+     висоти — так обидва стовпчики читаються як одна композиція. */
+  align-items: start;
+  grid-template-columns: 0.85fr 1.15fr;
+}
+/* Фрази заголовка накладаються одна на одну й змінюються плавним згасанням.
+   Висота — під найдовшу фразу в три рядки, щоб текст нижче не стрибав. */
+.rotor {
+  display: grid;
+}
+.rotor > span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.rotor > span[data-on="true"] {
+  opacity: 1;
+}
+.rotor em {
+  font-style: normal;
+  color: var(--signal);
+}
+/* Сцени головної мають pointer-events: none, щоб не заважати прокрутці.
+   Формі потрібні кліки й введення. */
+.scene .hero-form {
+  pointer-events: auto;
+}
+/* Контент сцен притиснутий ліворуч; для тексту з формою це лишало порожню
+   смугу праворуч — центруємо й даємо трохи більше ширини. */
+.scene .content:has(.hero-split) {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+/* Підказка «гортайте» стоїть по центру низу й наїжджала на кнопку форми —
+   переносимо її під лівий стовпчик, вирівняний з текстом. */
+@media (min-width: 1000px) {
+  body:has(.hero-split) .scrollcue {
+    left: max(48px, calc(50% - 640px));
+    transform: none;
+  }
+}
+/* Телефони: форма лишається на першому екрані, але без допоміжного тексту —
+   заголовок, форма й кнопка мають влізти в один екран. */
+@media (max-width: 999px) {
+  .hero-split {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .hero-split .eyebrow,
+  .hero-split .sub {
+    display: none;
+  }
+  .hero-split .rotor {
+    font-size: clamp(26px, 7.4vw, 40px);
+  }
+  body:has(.hero-split) .scrollcue {
+    display: none;
+  }
+  /* Необовʼязкові поля ховаємо: «Компанія» може бути порожньою, а «Що
+     потрібно» вже має типове значення, яке й піде в заявку. */
+  .hero-form .panel h2,
+  .hero-form .field:has([name="companyName"]),
+  .hero-form .field:has([name="serviceName"]) {
+    display: none;
+  }
+}
+
+/* Форма в першому екрані — компактна версія того самого ContactForm.
+   Сцена не прокручується всередині, тож уся форма з кнопкою має влізти в
+   екран. На /contact ці правила не діють: там форма в повному вигляді. */
+.hero-form .panel {
+  padding: 22px 24px 24px;
+}
+/* Тег і вступ дублюють заголовок першого екрана поруч. */
+.hero-form .ptag,
+.hero-form .panel > p {
+  display: none;
+}
+.hero-form .panel h2 {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+/* Поля парами: обгортки рядків розчиняються в спільну сітку з двох колонок,
+   і «Контакт» з «Що потрібно» стають в один рядок. */
+.hero-form form {
+  margin-top: 0;
+  gap: 12px 16px;
+  grid-template-columns: 1fr 1fr;
+}
+.hero-form form > .grid:not(.field) {
+  display: contents;
+}
+.hero-form .field:has(textarea),
+.hero-form .consent,
+.hero-form .alert,
+.hero-form form > button {
+  grid-column: 1 / -1;
+}
+.hero-form .field {
+  gap: 6px;
+}
+.hero-form .field input,
+.hero-form .cbx-btn {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+.hero-form .field textarea {
+  min-height: 72px;
+  height: 72px;
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+.hero-form .consent {
+  max-width: none;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0;
+}
+.hero-form form > button.cta {
+  margin-top: 4px;
+  padding: 16px 28px;
+  justify-self: start;
+}
+
+/* Компактніші відступи форми першого екрана на телефонах — після базових
+   правил `.hero-form`, щоб перекрити їх. */
+@media (max-width: 999px) {
+  .hero-form .panel {
+    padding: 16px;
+  }
+  .hero-form form {
+    gap: 10px 12px;
+  }
+  .hero-form .field textarea {
+    min-height: 60px;
+    height: 60px;
+  }
+  .hero-form .consent {
+    font-size: 10px;
+  }
+}
+
+/* Ліва колонка першого екрана: верх тексту — на рівні заголовка форми,
+   заголовок спокійніший за розміром, щоб не перебивав форму поруч. */
+@media (min-width: 1000px) {
+  .hero-split > :first-child {
+    padding-top: 26px;
+  }
+  .hero-split .rotor {
+    font-size: clamp(38px, 3.6vw, 56px);
+  }
+}
+
+/* Телефони: перший екран починається одразу під шапкою, поля — в одну
+   колонку на всю ширину (у дві вони виходили надто вузькими). */
+@media (max-width: 999px) {
+  #s-hero {
+    align-items: flex-start;
+  }
+  .hero-form form {
+    grid-template-columns: 1fr;
+  }
+}
+/* На низьких телефонах одна колонка не вміщається — лишаємо пари полів. */
+@media (max-width: 999px) and (max-height: 779px) {
+  .hero-form form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+/* Низькі вікна на компʼютері (ноутбук 1366×768 мінус панелі браузера ≈ 650px):
+   прибираємо те саме, що й на телефоні, інакше кнопка форми виходить за екран. */
+@media (min-width: 1000px) and (max-height: 719px) {
+  .hero-form .panel h2,
+  .hero-form .field:has([name="companyName"]),
+  .hero-form .field:has([name="serviceName"]) {
+    display: none;
+  }
+}
+
+/* Текст помилок під кожним полем на телефоні й у низькому вікні виштовхує
+   кнопку за екран. Там помилку показує колір поля й підпису, а текст лишається
+   для скрінрідера (візуально прихований, не display: none). */
+@media (max-width: 999px), (min-width: 1000px) and (max-height: 719px) {
+  .hero-form .field .err {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .hero-form .field:has(.err) > span:first-child {
+    color: var(--rose);
+  }
+  .hero-form .field:has(.err) input,
+  .hero-form .field:has(.err) textarea,
+  .hero-form .field:has(.err) .cbx-btn {
+    border-color: var(--rose);
+  }
+}
